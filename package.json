@@ -1,0 +1,23 @@
+{
+  "name": "jetavator",
+  "version": "0.0.1",
+  "description": "jetavator",
+  "bin": {
+    "pviewer": "app.js"
+  },
+  "author": "Takuma Hirayama <hirayama.takuma@picam360.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/picam360/jetavator.git"
+  },
+  "dependencies": {
+    "node-pserver": "0.4.0",
+    "recursive-copy": "*",
+    "rimraf": "*"
+  },
+  "scripts": {
+    "install": "node setup.js",
+    "start": "node node_modules/node-pserver/app.js"
+  }
+}

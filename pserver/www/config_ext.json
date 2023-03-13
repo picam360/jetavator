@@ -1,0 +1,5 @@
+{
+	"plugin_paths" : [
+		"plugins/jetavator/jetavator.js"
+	]
+}
