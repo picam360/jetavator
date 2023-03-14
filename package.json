@@ -18,6 +18,6 @@
   },
   "scripts": {
     "install": "node setup.js",
-    "start": "node --preserve-symlinks node_modules/node-pserver/app.js -c ${PWD}/pserver-config.json"
+    "start": "cd node_modules/node-pserver ; node --preserve-symlinks app.js -c plugins/jetavator/config.json"
   }
 }
