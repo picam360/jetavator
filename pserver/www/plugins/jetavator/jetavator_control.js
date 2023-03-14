@@ -2,6 +2,8 @@ var create_plugin = (function() {
 	var m_plugin_host = null;
 	var m_is_init = false;
 
+	var VEHICLE_DOMAIN = UPSTREAM_DOMAIN + "jetavator_service.";
+
 	window.addEventListener('gamepadconnected', function(e) {
 		active_gamepad = e.gamepad.id;
 		console.log("gamepadconnected", active_gamepad);
@@ -46,8 +48,20 @@ var create_plugin = (function() {
 			for ( var key in new_state) {
 				if (new_state[key] != gamepad_state[key]) {
 					var event = key + "_" + (new_state[key] ? "DOWN" : "UP");
-					if (m_plugin_host) {
-						m_plugin_host.send_event("GAMEPAD", event);
+					switch(event){
+						case "12_BUTTON_DOWN":
+							var cmd = VEHICLE_DOMAIN + "move_forward";
+							m_plugin_host.send_command(cmd);
+							break;
+						case "13_BUTTON_DOWN":
+							var cmd = VEHICLE_DOMAIN + "move_backward";
+							m_plugin_host.send_command(cmd);
+							break;
+						case "12_BUTTON_UP":
+						case "13_BUTTON_UP":
+							var cmd = VEHICLE_DOMAIN + "stop";
+							m_plugin_host.send_command(cmd);
+							break;
 					}
 				}
 			}
