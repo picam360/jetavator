@@ -12,8 +12,6 @@ module.exports = {
 		var plugin = {
 			name : "jetavator_service",
 			command_handler : function(cmd) {
-				var split = cmd.split(' ');
-				cmd = split[0];
 				pyshell.send(cmd);
 			}
 		};
