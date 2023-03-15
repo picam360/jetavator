@@ -13,12 +13,14 @@ try{
 }
 
 try{
+	execSync(`rm ${__dirname}/node_modules/node-pserver/plugins/jetavator`, {cwd : __dirname});
 	execSync(`ln -s ${__dirname}/pserver/plugins/jetavator ${__dirname}/node_modules/node-pserver/plugins/jetavator`, {cwd : __dirname});
 }catch(err){
 	console.log("error on symlink pserver plugin:" + err);
 }
 
 try{
+	execSync(`rm ${__dirname}/node_modules/node-pserver/www/plugins/jetavator`, {cwd : __dirname});
 	execSync(`ln -s ${__dirname}/pviewer/plugins/jetavator ${__dirname}/node_modules/node-pserver/www/plugins/jetavator`, {cwd : __dirname});
 }catch(err){
 	console.log("error on symlink pviewer plugin:" + err);
