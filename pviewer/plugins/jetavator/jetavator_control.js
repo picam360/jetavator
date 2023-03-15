@@ -43,6 +43,7 @@ var create_plugin = (function() {
 			new_state[key + "_FORWARD"] = gamepad.axes[i] > push_threshold;
 			new_state[key + "_BACKWARD"] = gamepad.axes[i] < -push_threshold;
 			new_state[key + "_VALUE"] = gamepad.axes[i];
+			new_state[key + "_PERCENT"] = Math.round(gamepad.axes[i]*100);
 		}
 		if (!gamepad_state) {
 			gamepad_state = new_state;
@@ -50,9 +51,9 @@ var create_plugin = (function() {
 		for ( var key in new_state) {
 			if (new_state[key] != gamepad_state[key]) {
 				switch(key){
-					case "1_AXIS_VALUE":
+					case "1_AXIS_PERCENT":
 						if(new_state["4_BUTTON"] && new_state["5_BUTTON"]){
-							var value = (new_state[key] * -100).toFixed(0);
+							var value = (new_state[key] * -1).toFixed(0);
 							var cmd = VEHICLE_DOMAIN + "left_wheel " + value;
 							m_plugin_host.send_command(cmd);
 						}else{
@@ -62,9 +63,9 @@ var create_plugin = (function() {
 							//TODO:arm control
 						}
 						break;
-					case "3_AXIS_VALUE":
+					case "3_AXIS_PERCENT":
 						if(new_state["4_BUTTON"] && new_state["5_BUTTON"]){
-							var value = (new_state[key] * -100).toFixed(0);
+							var value = (new_state[key] * -1).toFixed(0);
 							var cmd = VEHICLE_DOMAIN + "right_wheel " + value;
 							m_plugin_host.send_command(cmd);
 						}else{
