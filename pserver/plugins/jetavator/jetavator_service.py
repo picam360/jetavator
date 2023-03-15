@@ -17,6 +17,22 @@ for line in sys.stdin:
         motor2.setSpeed(0)
         motor2.run(dir_forward)
         print(line + ' done')
+    elif line.startswith("left_wheel "):
+        val = int(line.split(' ')[1])
+        if(val >= 0):
+            motor1.run(dir_forward)
+        else:
+            motor1.run(dir_backward)
+        motor1.setSpeed(abs(val))
+        print(line + ' done')
+    elif line.startswith("right_wheel "):
+        val = int(line.split(' ')[1])
+        if(val >= 0):
+            motor2.run(dir_forward)
+        else:
+            motor2.run(dir_backward)
+        motor2.setSpeed(abs(val))
+        print(line + ' done')
     elif line == "move_forward":
         motor1.setSpeed(speed)
         motor1.run(dir_forward)

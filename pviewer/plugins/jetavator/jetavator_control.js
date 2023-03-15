@@ -42,27 +42,38 @@ var create_plugin = (function() {
 			var key = i + "_AXIS";
 			new_state[key + "_FORWARD"] = gamepad.axes[i] > push_threshold;
 			new_state[key + "_BACKWARD"] = gamepad.axes[i] < -push_threshold;
+			new_state[key + "_VALUE"] = gamepad.axes[i];
 		}
-		if (gamepad_state) {
-			var eventList = {};
-			for ( var key in new_state) {
-				if (new_state[key] != gamepad_state[key]) {
-					var event = key + "_" + (new_state[key] ? "DOWN" : "UP");
-					switch(event){
-						case "12_BUTTON_DOWN":
-							var cmd = VEHICLE_DOMAIN + "move_forward";
+		if (!gamepad_state) {
+			gamepad_state = new_state;
+		}
+		for ( var key in new_state) {
+			if (new_state[key] != gamepad_state[key]) {
+				switch(key){
+					case "1_AXIS_VALUE":
+						if(new_state["4_BUTTON"] && new_state["5_BUTTON"]){
+							var value = (new_state[key] * -100).toFixed(0);
+							var cmd = VEHICLE_DOMAIN + "left_wheel " + value;
 							m_plugin_host.send_command(cmd);
-							break;
-						case "13_BUTTON_DOWN":
-							var cmd = VEHICLE_DOMAIN + "move_backward";
+						}else{
+							var cmd = VEHICLE_DOMAIN + "left_wheel 0";
 							m_plugin_host.send_command(cmd);
-							break;
-						case "12_BUTTON_UP":
-						case "13_BUTTON_UP":
-							var cmd = VEHICLE_DOMAIN + "stop";
+
+							//TODO:arm control
+						}
+						break;
+					case "3_AXIS_VALUE":
+						if(new_state["4_BUTTON"] && new_state["5_BUTTON"]){
+							var value = (new_state[key] * -100).toFixed(0);
+							var cmd = VEHICLE_DOMAIN + "right_wheel " + value;
 							m_plugin_host.send_command(cmd);
-							break;
-					}
+						}else{
+							var cmd = VEHICLE_DOMAIN + "right_wheel 0";
+							m_plugin_host.send_command(cmd);
+
+							//TODO:arm control
+						}
+						break;
 				}
 			}
 		}
