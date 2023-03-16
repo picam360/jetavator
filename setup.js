@@ -7,21 +7,33 @@ const rcopy = require('recursive-copy');
 const { execSync } = require('child_process');
 
 try{
-	execSync(`cp -n pserver/plugins/jetavator/config.json.tmp pserver/plugins/jetavator/config.json`, {cwd : __dirname});
+	var src = `${__dirname}/pserver/plugins/jetavator/config.json.tmp`;
+	var dst = `${__dirname}/pserver/plugins/jetavator/config.json`;
+	if (!fs.existsSync(dst)) {
+		execSync(`cp ${src} ${dst}`, {cwd : __dirname});
+	}
 }catch(err){
 	console.log("error on copy pserver config:" + err);
 }
 
 try{
-	execSync(`rm ${__dirname}/node_modules/node-pserver/plugins/jetavator`, {cwd : __dirname});
-	execSync(`ln -s ${__dirname}/pserver/plugins/jetavator ${__dirname}/node_modules/node-pserver/plugins/jetavator`, {cwd : __dirname});
+	var src = `${__dirname}/pserver/plugins/jetavator`;
+	var dst = `${__dirname}/node_modules/node-pserver/plugins/jetavator`;
+	if (fs.existsSync(dst)) {
+		execSync(`rm ${dst}`, {cwd : __dirname});
+	}
+	execSync(`ln -s ${src} ${dst}`, {cwd : __dirname});
 }catch(err){
 	console.log("error on symlink pserver plugin:" + err);
 }
 
 try{
-	execSync(`rm ${__dirname}/node_modules/node-pserver/www/plugins/jetavator`, {cwd : __dirname});
-	execSync(`ln -s ${__dirname}/pviewer/plugins/jetavator ${__dirname}/node_modules/node-pserver/www/plugins/jetavator`, {cwd : __dirname});
+	var src = `${__dirname}/pviewer/plugins/jetavator`;
+	var dst = `${__dirname}/node_modules/node-pserver/www/plugins/jetavator`;
+	if (fs.existsSync(dst)) {
+		execSync(`rm ${dst}`, {cwd : __dirname});
+	}
+	execSync(`ln -s ${src} ${dst}`, {cwd : __dirname});
 }catch(err){
 	console.log("error on symlink pviewer plugin:" + err);
 }
