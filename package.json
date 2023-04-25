@@ -12,6 +12,8 @@
     "url": "git+https://github.com/picam360/jetavator.git"
   },
   "dependencies": {
+    "i2c-bus": "^5.2.2",
+    "pca9685": "^5.0.0",
     "node-pserver": "0.4.0",
     "recursive-copy": "*",
     "rimraf": "*"

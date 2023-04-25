@@ -1,7 +1,7 @@
 module.exports = {
-	create_plugin : function(plugin_host) {
+	create_plugin: function (plugin_host) {
 		console.log("create jetavator service plugin");
-		var {PythonShell} = require('python-shell');
+		var { PythonShell } = require('python-shell');
 
 		var pyshell = new PythonShell(__dirname + '/jetavator_service.py');
 		pyshell.on('message', function (message) {
@@ -9,10 +9,130 @@ module.exports = {
 		});
 		pyshell.send('init');
 
+		var i2c_buf = require("i2c-bus");
+		var Pca9685Driver = require("pca9685").Pca9685Driver;
+		var pwm_options = {
+			i2c: i2c_buf.openSync(1),
+			address: 0x40,
+			frequency: 50,
+			debug: false
+		};
+		var options = {
+			BOOM_PINS: [0, 1],
+			ARM_PINS: [2, 3],
+			BUCKET_PINS: [4, 5],
+			YAW_PINS: [6, 7],
+			ATTACHMENT_PINS: [8, 9],
+			PINS: [],
+		};
+		const UP = 0;
+		const DOWN = 1;
+		const CW = 0;
+		const CCW = 1;
+		options.PINS = options.PINS.concat(options.BOOM_PINS, options.ARM_PINS, options.BUCKET_PINS, options.YAW_PINS, options.ATTACHMENT_PINS);
+		var pwm = new Pca9685Driver(pwm_options, function (err) {
+			if (err) {
+				console.error("Error initializing PCA9685");
+				process.exit(-1);
+			}
+
+			reset_pins();
+
+			process.on('SIGINT', function () {
+				reset_pins();
+				process.exit();
+			});
+
+			console.log("Initialization done");
+		});
+
+		function reset_pins() {
+			for (var idx in options.PINS) {
+				pwm.setPulseLength(options.PINS[idx], 0);
+			}
+		}
+
 		var plugin = {
-			name : "jetavator_service",
-			command_handler : function(cmd) {
-				pyshell.send(cmd);
+			name: "jetavator_service",
+			command_handler: function (cmd) {
+				var params = cmd.split(' ');
+				switch (params[0]) {
+					case "reset":
+						reset_pins();
+						break;
+					case "left_wheel":
+					case "right_wheel":
+						pyshell.send(cmd);
+						break;
+					case "boom":
+						{
+							var value = Math.abs(params[1]) / 100 * 10000;
+							var pin0 = options.BOOM_PINS[DOWN];
+							var pin1 = options.BOOM_PINS[UP];
+							if (value < 2000) {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, 0);
+							} else if (params[1] < 0) {
+								pwm.setPulseLength(pin0, value);
+								pwm.setPulseLength(pin1, 0);
+							} else {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, value);
+							}
+						}
+						break;
+					case "arm":
+						{
+							var value = Math.abs(params[1]) / 100 * 10000;
+							var pin0 = options.ARM_PINS[DOWN];
+							var pin1 = options.ARM_PINS[UP];
+							if (value < 2000) {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, 0);
+							} else if (params[1] < 0) {
+								pwm.setPulseLength(pin0, value);
+								pwm.setPulseLength(pin1, 0);
+							} else {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, value);
+							}
+						}
+						break;
+					case "yaw":
+						{
+							var value = Math.abs(params[1]) / 100 * 10000;
+							var pin0 = options.YAW_PINS[CCW];
+							var pin1 = options.YAW_PINS[CW];
+							if (value < 2000) {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, 0);
+							} else if (params[1] < 0) {
+								pwm.setPulseLength(pin0, value);
+								pwm.setPulseLength(pin1, 0);
+							} else {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, value);
+							}
+						}
+						break;
+					case "bucket":
+						{
+							var value = Math.abs(params[1]) / 100 * 10000;
+							var pin0 = options.BUCKET_PINS[DOWN];
+							var pin1 = options.BUCKET_PINS[UP];
+							if (value < 2000) {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, 0);
+							} else if (params[1] < 0) {
+								pwm.setPulseLength(pin0, value);
+								pwm.setPulseLength(pin1, 0);
+							} else {
+								pwm.setPulseLength(pin0, 0);
+								pwm.setPulseLength(pin1, value);
+							}
+						}
+						break;
+				}
 			}
 		};
 		return plugin;
