@@ -14,6 +14,16 @@ var create_plugin = (function () {
 		active_gamepad = "";
 	}, false);
 
+	var m_mode = "JIS";
+	var MODE_DEF = {
+		"JIS" : {
+			"LeftHorizon" : "yaw",
+			"LeftVertical" : "arm",
+			"RightHorizon" : "bucket",
+			"RightVertical" : "boom",
+		}
+	};
+
 	var push_threshold = 0.5;
 	var active_gamepad = "";
 	var gamepads = [];
@@ -64,49 +74,30 @@ var create_plugin = (function () {
 					switch (key) {
 						case "1_AXIS_PERCENT":
 							{
-								var value = (new_state[key] * -1).toFixed(0);
+								var value = new_state[key].toFixed(0);
 								var cmd = VEHICLE_DOMAIN + "left_wheel " + value;
 								m_plugin_host.send_command(cmd);
 							}
 							break;
 						case "3_AXIS_PERCENT":
 							{
-								var value = (new_state[key] * -1).toFixed(0);
+								var value = new_state[key].toFixed(0);
 								var cmd = VEHICLE_DOMAIN + "right_wheel " + value;
 								m_plugin_host.send_command(cmd);
 							}
 							break;
 					}
 				} else {
-					switch (key) {
-						case "0_AXIS_PERCENT":
-							{
-								var value = (new_state[key] * -1).toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "boom " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
-						case "1_AXIS_PERCENT":
-							{
-								var value = (new_state[key] * -1).toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "arm " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
-						case "2_AXIS_PERCENT":
-							{
-								var value = (new_state[key] * -1).toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "yaw " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
-						case "3_AXIS_PERCENT":
-							{
-								var value = (new_state[key] * -1).toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "bucket " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
+					var table = {
+						"0_AXIS_PERCENT" : "LeftHorizon",
+						"1_AXIS_PERCENT" : "LeftVertical",
+						"2_AXIS_PERCENT" : "RightHorizon",
+						"3_AXIS_PERCENT" : "RightVertical",
+					};
+					if(table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]){
+						var value = new_state[key].toFixed(0);
+						var cmd = VEHICLE_DOMAIN +  MODE_DEF[m_mode][table[key]] + " " + value;
+						m_plugin_host.send_command(cmd);
 					}
 				}
 			}
