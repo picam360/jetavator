@@ -59,9 +59,9 @@ module.exports = {
 				switch (params[0]) {
 					case "reset":
 						reset_pins();
-						break;
-					case "left_wheel":
-					case "right_wheel":
+						//through
+					case "left_crawler":
+					case "right_crawler":
 						pyshell.send(cmd);
 						break;
 					case "boom":
