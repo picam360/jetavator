@@ -17,14 +17,44 @@ var create_plugin = (function () {
 	var m_mode = "JIS";
 	var MODE_DEF = {
 		"JIS": {
-			"LeftHorizon": "yaw",
-			"LeftVertical": "arm",
-			"RightHorizon": "bucket",
-			"RightVertical": "boom",
-			"LeftBackOpt": "reverse LeftBack",
-			"RightBackOpt": "reverse RightBack",
-			"LeftBack": "left_crawler",
-			"RightBack": "right_crawler",
+			"LeftHorizon": {
+				mod: "yaw",
+				dir: 1,
+			},
+			"LeftVertical": {
+				mod: "arm",
+				dir: 1,
+			},
+			"RightHorizon": {
+				mod: "bucket",
+				dir: 1,
+			},
+			"RightVertical": {
+				mod: "boom",
+				dir: 1,
+			},
+			"LeftBackOpt": {
+				cmd: "reverse LeftBack",
+			},
+			"RightBackOpt": {
+				cmd: "reverse RightBack",
+			},
+			"LeftBack": {
+				mod: "left_crawler",
+				dir: 1,
+			},
+			"RightBack": {
+				mod: "right_crawler",
+				dir: 1,
+			},
+			"CrawlerMode_LeftVertical": {
+				mod: "left_crawler",
+				dir: -1,
+			},
+			"CrawlerMode_RightVertical": {
+				mod: "right_crawler",
+				dir: -1,
+			},
 		}
 	};
 
@@ -76,12 +106,16 @@ var create_plugin = (function () {
 					}
 				}
 
-				var table
+				var table;
 				if (m_crawler_mode) {
 					//https://gamepad-tester.com/
 					table = {
-						"1_AXIS_PERCENT": "LeftBack",
-						"3_AXIS_PERCENT": "RightBack",
+						"1_AXIS_PERCENT": "CrawlerMode_LeftVertical",
+						"3_AXIS_PERCENT": "CrawlerMode_RightVertical",
+						"4_BUTTON_PUSHED": "LeftBackOpt",
+						"5_BUTTON_PUSHED": "RightBackOpt",
+						"6_BUTTON_PERCENT": "LeftBack",
+						"7_BUTTON_PERCENT": "RightBack",
 					};
 				} else {
 					//https://gamepad-tester.com/
@@ -97,16 +131,21 @@ var create_plugin = (function () {
 					};
 				}
 				if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
-					if (MODE_DEF[m_mode][table[key]].split(' ').length != 1) {
-						//dommand
+					if (!MODE_DEF[m_mode][table[key]].mod) {
 						continue;
 					}
 					var value = new_state[key].toFixed(0);
+					if (MODE_DEF[m_mode][table[key]].dir) {
+						value *= MODE_DEF[m_mode][table[key]].dir;
+					}
 					for (var key2 in new_state) { // execute command
 						if (new_state[key2] && table[key2] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key2]]) {
-							var cmd = MODE_DEF[m_mode][table[key2]].split(' ');
-							if (cmd.length == 2 && cmd[1] == table[key]) {
-								switch (cmd[0]) {
+							if (!MODE_DEF[m_mode][table[key2]].cmd) {
+								continue;
+							}
+							var params = MODE_DEF[m_mode][table[key2]].cmd.split(' ');
+							if (params.length == 2 && params[1] == table[key]) {
+								switch (params[0]) {
 									case "reverse":
 										value *= -1;
 										break;
@@ -114,7 +153,7 @@ var create_plugin = (function () {
 							}
 						}
 					}
-					var cmd = VEHICLE_DOMAIN + MODE_DEF[m_mode][table[key]] + " " + value;
+					var cmd = VEHICLE_DOMAIN + MODE_DEF[m_mode][table[key]].mod + " " + value;
 					m_plugin_host.send_command(cmd);
 					console.log(cmd);
 				}

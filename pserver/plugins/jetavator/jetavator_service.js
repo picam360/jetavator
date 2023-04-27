@@ -25,10 +25,6 @@ module.exports = {
 			ATTACHMENT_PINS: [8, 9],
 			PINS: [],
 		};
-		const UP = 0;
-		const DOWN = 1;
-		const CW = 0;
-		const CCW = 1;
 		options.PINS = options.PINS.concat(options.BOOM_PINS, options.ARM_PINS, options.BUCKET_PINS, options.YAW_PINS, options.ATTACHMENT_PINS);
 		var pwm = new Pca9685Driver(pwm_options, function (err) {
 			if (err) {
@@ -67,8 +63,8 @@ module.exports = {
 					case "boom":
 						{
 							var value = Math.abs(params[1]) / 100 * 10000;
-							var pin0 = options.BOOM_PINS[DOWN];
-							var pin1 = options.BOOM_PINS[UP];
+							var pin0 = options.BOOM_PINS[0];
+							var pin1 = options.BOOM_PINS[1];
 							if (value < 2000) {
 								pwm.setPulseLength(pin0, 0);
 								pwm.setPulseLength(pin1, 0);
@@ -84,8 +80,8 @@ module.exports = {
 					case "arm":
 						{
 							var value = Math.abs(params[1]) / 100 * 10000;
-							var pin0 = options.ARM_PINS[DOWN];
-							var pin1 = options.ARM_PINS[UP];
+							var pin0 = options.ARM_PINS[0];
+							var pin1 = options.ARM_PINS[1];
 							if (value < 2000) {
 								pwm.setPulseLength(pin0, 0);
 								pwm.setPulseLength(pin1, 0);
@@ -101,8 +97,8 @@ module.exports = {
 					case "yaw":
 						{
 							var value = Math.abs(params[1]) / 100 * 10000;
-							var pin0 = options.YAW_PINS[CCW];
-							var pin1 = options.YAW_PINS[CW];
+							var pin0 = options.YAW_PINS[0];
+							var pin1 = options.YAW_PINS[1];
 							if (value < 2000) {
 								pwm.setPulseLength(pin0, 0);
 								pwm.setPulseLength(pin1, 0);
@@ -118,8 +114,8 @@ module.exports = {
 					case "bucket":
 						{
 							var value = Math.abs(params[1]) / 100 * 10000;
-							var pin0 = options.BUCKET_PINS[DOWN];
-							var pin1 = options.BUCKET_PINS[UP];
+							var pin0 = options.BUCKET_PINS[0];
+							var pin1 = options.BUCKET_PINS[1];
 							if (value < 2000) {
 								pwm.setPulseLength(pin0, 0);
 								pwm.setPulseLength(pin1, 0);
