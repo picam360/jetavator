@@ -97,7 +97,7 @@ var create_plugin = (function () {
 		}
 		for (var key in new_state) {
 			if (new_state[key] != gamepad_state[key]) {
-				var crawler_mode = (new_state["10_BUTTON_PUSHED"] && new_state["11_BUTTON_PUSHED"]);
+				var crawler_mode = (new_state["10_BUTTON_PUSHED"] || new_state["11_BUTTON_PUSHED"]);
 				if (crawler_mode != m_crawler_mode) {
 					m_crawler_mode = crawler_mode;
 					{
