@@ -97,7 +97,7 @@ var create_plugin = (function () {
 		}
 		for (var key in new_state) {
 			if (new_state[key] != gamepad_state[key]) {
-				var crawler_mode = (new_state["4_BUTTON_PUSHED"] && new_state["5_BUTTON_PUSHED"]);
+				var crawler_mode = (new_state["10_BUTTON_PUSHED"] && new_state["11_BUTTON_PUSHED"]);
 				if (crawler_mode != m_crawler_mode) {
 					m_crawler_mode = crawler_mode;
 					{
@@ -112,10 +112,6 @@ var create_plugin = (function () {
 					table = {
 						"1_AXIS_PERCENT": "CrawlerMode_LeftVertical",
 						"3_AXIS_PERCENT": "CrawlerMode_RightVertical",
-						"4_BUTTON_PUSHED": "LeftBackOpt",
-						"5_BUTTON_PUSHED": "RightBackOpt",
-						"6_BUTTON_PERCENT": "LeftBack",
-						"7_BUTTON_PERCENT": "RightBack",
 					};
 				} else {
 					//https://gamepad-tester.com/
