@@ -19,19 +19,19 @@ var create_plugin = (function () {
 		"JIS": {
 			"LeftHorizon": {
 				mod: "yaw",
-				dir: 1,
+				dir: -1,
 			},
 			"LeftVertical": {
 				mod: "arm",
-				dir: 1,
+				dir: -1,
 			},
 			"RightHorizon": {
 				mod: "bucket",
-				dir: 1,
+				dir: -1,
 			},
 			"RightVertical": {
 				mod: "boom",
-				dir: 1,
+				dir: -1,
 			},
 			"LeftBackOpt": {
 				cmd: "reverse LeftBack",
