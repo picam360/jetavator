@@ -4,8 +4,8 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT
 driver = Adafruit_MotorHAT(i2c_bus=1)
 motor1 = driver.getMotor(1)
 motor2 = driver.getMotor(2)
-dir_forward = Adafruit_MotorHAT.BACKWARD
-dir_backward = Adafruit_MotorHAT.FORWARD
+dir_backward = Adafruit_MotorHAT.BACKWARD
+dir_forward = Adafruit_MotorHAT.FORWARD
 duty = 40
 speed = int(duty*255/100)
 
