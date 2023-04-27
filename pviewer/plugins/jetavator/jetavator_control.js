@@ -1,7 +1,7 @@
 var create_plugin = (function () {
 	var m_plugin_host = null;
 	var m_is_init = false;
-	var m_wheel_mode = false;
+	var m_crawler_mode = false;
 
 	var VEHICLE_DOMAIN = UPSTREAM_DOMAIN + "jetavator_service.";
 
@@ -16,11 +16,15 @@ var create_plugin = (function () {
 
 	var m_mode = "JIS";
 	var MODE_DEF = {
-		"JIS" : {
-			"LeftHorizon" : "yaw",
-			"LeftVertical" : "arm",
-			"RightHorizon" : "bucket",
-			"RightVertical" : "boom",
+		"JIS": {
+			"LeftHorizon": "yaw",
+			"LeftVertical": "arm",
+			"RightHorizon": "bucket",
+			"RightVertical": "boom",
+			"LeftBackOpt": "reverse LeftBack",
+			"RightBackOpt": "reverse RightBack",
+			"LeftBack": "left_crawler",
+			"RightBack": "right_crawler",
 		}
 	};
 
@@ -47,7 +51,9 @@ var create_plugin = (function () {
 		var new_state = {}
 		for (var i in gamepad.buttons) {
 			var key = i + "_BUTTON";
-			new_state[key] = gamepad.buttons[i].value > push_threshold;
+			new_state[key + "_PUSHED"] = gamepad.buttons[i].value > push_threshold;
+			new_state[key + "_VALUE"] = gamepad.buttons[i].value;
+			new_state[key + "_PERCENT"] = Math.round(gamepad.buttons[i].value * 100);
 		}
 		for (var i in gamepad.axes) {
 			var key = i + "_AXIS";
@@ -61,44 +67,56 @@ var create_plugin = (function () {
 		}
 		for (var key in new_state) {
 			if (new_state[key] != gamepad_state[key]) {
-				var wheel_mode = (new_state["4_BUTTON"] && new_state["5_BUTTON"]);
-				if (wheel_mode != m_wheel_mode) {
-					m_wheel_mode = wheel_mode;
+				var crawler_mode = (new_state["4_BUTTON_PUSHED"] && new_state["5_BUTTON_PUSHED"]);
+				if (crawler_mode != m_crawler_mode) {
+					m_crawler_mode = crawler_mode;
 					{
 						var cmd = VEHICLE_DOMAIN + "reset";
 						m_plugin_host.send_command(cmd);
 					}
 				}
-				
-				if (m_wheel_mode) {
-					switch (key) {
-						case "1_AXIS_PERCENT":
-							{
-								var value = new_state[key].toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "left_wheel " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
-						case "3_AXIS_PERCENT":
-							{
-								var value = new_state[key].toFixed(0);
-								var cmd = VEHICLE_DOMAIN + "right_wheel " + value;
-								m_plugin_host.send_command(cmd);
-							}
-							break;
-					}
-				} else {
-					var table = {
-						"0_AXIS_PERCENT" : "LeftHorizon",
-						"1_AXIS_PERCENT" : "LeftVertical",
-						"2_AXIS_PERCENT" : "RightHorizon",
-						"3_AXIS_PERCENT" : "RightVertical",
+
+				var table
+				if (m_crawler_mode) {
+					//https://gamepad-tester.com/
+					table = {
+						"1_AXIS_PERCENT": "LeftBack",
+						"3_AXIS_PERCENT": "RightBack",
 					};
-					if(table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]){
-						var value = new_state[key].toFixed(0);
-						var cmd = VEHICLE_DOMAIN +  MODE_DEF[m_mode][table[key]] + " " + value;
-						m_plugin_host.send_command(cmd);
+				} else {
+					//https://gamepad-tester.com/
+					table = {
+						"0_AXIS_PERCENT": "LeftHorizon",
+						"1_AXIS_PERCENT": "LeftVertical",
+						"2_AXIS_PERCENT": "RightHorizon",
+						"3_AXIS_PERCENT": "RightVertical",
+						"4_BUTTON_PUSHED": "LeftBackOpt",
+						"5_BUTTON_PUSHED": "RightBackOpt",
+						"6_BUTTON_PERCENT": "LeftBack",
+						"7_BUTTON_PERCENT": "RightBack",
+					};
+				}
+				if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
+					if (MODE_DEF[m_mode][table[key]].split(' ').length != 1) {
+						//dommand
+						continue;
 					}
+					var value = new_state[key].toFixed(0);
+					for (var key2 in new_state) { // execute command
+						if (new_state[key2] && table[key2] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key2]]) {
+							var cmd = MODE_DEF[m_mode][table[key2]].split(' ');
+							if (cmd.length == 2 && cmd[1] == table[key]) {
+								switch (cmd[0]) {
+									case "reverse":
+										value *= -1;
+										break;
+								}
+							}
+						}
+					}
+					var cmd = VEHICLE_DOMAIN + MODE_DEF[m_mode][table[key]] + " " + value;
+					m_plugin_host.send_command(cmd);
+					console.log(cmd);
 				}
 			}
 		}
