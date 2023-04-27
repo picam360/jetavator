@@ -198,7 +198,7 @@ var create_plugin = (function () {
 		},
 		"CAT": {
 			"LeftHorizon": { mod: "arm", dir: -1 },
-			"LeftVertical": { mod: "yaw", dir: -1 },
+			"LeftVertical": { mod: "yaw", dir: 1 },
 			"RightHorizon": { mod: "bucket", dir: -1 },
 			"RightVertical": { mod: "boom", dir: -1 },
 			"LeftBackOpt": { cmd: "reverse LeftBack" },
