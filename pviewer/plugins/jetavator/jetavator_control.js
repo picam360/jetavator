@@ -217,9 +217,6 @@ var create_plugin = (function () {
 		return "";
 	}
 
-	m_gamepad_id = get_last_gamepad_id();
-	console.log("active gamepad id : ", m_gamepad_id);
-
 	window.addEventListener('gamepadconnected', function (e) {
 		console.log("gamepadconnected : ", e.gamepad.id);
 		m_gamepad_id = e.gamepad.id;
@@ -234,6 +231,13 @@ var create_plugin = (function () {
 	}, false);
 
 	function handleGamepad() {
+		if(!m_gamepad_id){
+			var id = get_last_gamepad_id();
+			if(id){
+				m_gamepad_id = id;
+				console.log("active gamepad id : ", m_gamepad_id);
+			}
+		}
 		var gamepads = [];
 		if (navigator.getGamepads) {
 			gamepads = navigator.getGamepads();
