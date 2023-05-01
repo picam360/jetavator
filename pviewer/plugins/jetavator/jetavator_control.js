@@ -202,22 +202,35 @@ var create_plugin = (function () {
 	};
 
 	var PUSH_THRESHOLD = 0.5;
-	var m_active_gamepad = "";
+	var m_gamepad_id = "";//need to call navigator.getGamepads() dynamically to get live values
 	var m_gamepad_state = null;
 
-	if (navigator.getGamepads) {
-		var gamepads = navigator.getGamepads();
-		if(gamepads.length > 0 && gamepads[0]){
-			m_active_gamepad = gamepads[0].id;
+	function get_last_gamepad_id(){
+		if (navigator.getGamepads) {
+			var gamepads = navigator.getGamepads();
+			for (var i=gamepads.length-1;i>=0;i--) {
+				if (gamepads[i]) {
+					return gamepads[i].id;
+				}
+			}
 		}
+		return "";
 	}
+
+	m_gamepad_id = get_last_gamepad_id();
+	console.log("active gamepad id : ", m_gamepad_id);
+
 	window.addEventListener('gamepadconnected', function (e) {
-		m_active_gamepad = e.gamepad.id;
-		console.log("gamepadconnected", m_active_gamepad);
+		console.log("gamepadconnected : ", e.gamepad.id);
+		m_gamepad_id = e.gamepad.id;
+		console.log("active gamepad id : ", m_gamepad_id);
 	}, false);
 	window.addEventListener('gamepaddisconnected', function (e) {
-		console.log("gamepaddisconnected", m_active_gamepad);
-		m_active_gamepad = "";
+		console.log("gamepaddisconnected : ", e.gamepad.id);
+		if(e.gamepad.id == m_gamepad_id){
+			m_gamepad_id = get_last_gamepad_id();
+			console.log("active gamepad id : ", m_gamepad_id);
+		}
 	}, false);
 
 	function handleGamepad() {
@@ -227,7 +240,7 @@ var create_plugin = (function () {
 		}
 		var gamepad = null;
 		for (var i in gamepads) {
-			if (gamepads[i] && gamepads[i].id == m_active_gamepad) {
+			if (gamepads[i] && gamepads[i].id == m_gamepad_id) {
 				gamepad = gamepads[i];
 				break;
 			}
