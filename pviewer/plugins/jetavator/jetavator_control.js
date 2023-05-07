@@ -17,161 +17,6 @@ var create_plugin = (function () {
 
 	var JIS_ICON = "data:image/svg+xml," + button_svg("J", "888888");
 	var CAT_ICON = "data:image/svg+xml," + button_svg("C", "ffff00", "000000");
-	function create_button(src_normal, src_pushed, callback) {
-		var button = document.createElement("div");
-		var img = document.createElement("img");
-		button.appendChild(img);
-		
-		button.src_normal = src_normal;
-		button.src_pushed = src_pushed;
-		img.src = src_normal;
-
-		button.down = false;
-		button.last_down = 0;
-		button.last_up = 0;
-		button.set_src = function(src_normal, src_pushed) {
-			button.src_normal = src_normal;
-			button.src_pushed = src_pushed;
-			img.src = (!button.down ? src_normal : src_pushed);
-		}
-
-		//style
-		button.style.position = "absolute";
-		img.style.position = "relative";
-		img.style.top = "0%";
-		img.style.left = "0%";
-		img.style.width = "100%";
-		img.style.height = "100%";
-
-		var mousedownFunc = function(ev) {
-			var now = new Date().getTime();
-			if(now - button.last_down < 100){
-				return;
-			}
-			if (callback) {
-				callback({
-					type : "down",
-					caller : button,
-				});
-			}
-
-			img.style.top = "5%";
-			img.style.left = "5%";
-			img.style.width = "90%";
-			img.style.height = "90%";
-
-			button.down = true;
-			button.last_down = now;
-			if (button.src_pushed) {
-				button.src = button.src_pushed;
-			}
-		}
-		button.mouseupFunc = function() {
-			var now = new Date().getTime();
-			if(now - button.last_up < 100){
-				return;
-			}
-			if (callback) {
-				callback({
-					type : "up",
-					caller : button,
-				});
-			}
-
-			img.style.top = "0%";
-			img.style.left = "0%";
-			img.style.width = "100%";
-			img.style.height = "100%";
-
-			button.down = false;
-			button.last_up = now;
-			button.src = button.src_normal;
-		}
-		button.mousemoveFunc = function(ev) {
-			if (ev.type == "touchmove") {
-				ev.clientX = ev.pageX;
-				ev.clientY = ev.pageY;
-				ev.button = 0;
-			}
-			if (!button.down || ev.button != 0) {
-				return;
-			}
-			ev.preventDefault();
-			ev.stopPropagation();
-		}
-		var preventFunc = function(ev) {
-			ev.preventDefault();
-			ev.stopPropagation();
-		}
-		button.addEventListener("touchstart", mousedownFunc);
-		button.addEventListener("mousedown", mousedownFunc);
-		button.addEventListener("dragstart", preventFunc, {
-			passive : false
-		});
-
-		var mouseupFunc = function(ev) {
-			if (button.down) {
-				button.mouseupFunc(ev);
-			}
-		}
-		var mousemoveFunc = function(ev) {
-			if (button.down) {
-				button.mousemoveFunc(ev);
-			}
-		}
-
-		// addEventListener spec migration
-		var supportsPassive = false;
-		try {
-			var opts = Object.defineProperty({}, 'passive', {
-				get : function() {
-					supportsPassive = true;
-				}
-			});
-			window.addEventListener("test", null, opts);
-		} catch (e) {
-		}
-		document.addEventListener("touchend", mouseupFunc);
-		document.addEventListener("mouseup", mouseupFunc);
-		document.addEventListener("touchmove", mousemoveFunc, supportsPassive
-			? {
-				passive : false,
-				capture : true
-			}
-			: true);
-		document.addEventListener("mousemove", mousemoveFunc, supportsPassive
-			? {
-				passive : false,
-				capture : true
-			}
-			: true);
-
-		return button;
-	}
-	{
-		var button = create_button(JIS_ICON, JIS_ICON, function(
-			e) {
-			switch (e.type) {
-				case "up" :
-					m_mode = "JIS";
-					break;
-			}
-		});
-		button.setAttribute("style", `position:absolute; top:33%; right:10px; width:50px; height:50px;`);
-		document.body.appendChild(button);
-	}
-	{
-		var button = create_button(CAT_ICON, CAT_ICON, function(
-			e) {
-			switch (e.type) {
-				case "up" :
-					m_mode = "CAT";
-					break;
-			}
-		});
-		button.setAttribute("style", `position:absolute; top:66%; right:10px; width:50px; height:50px;`);
-		document.body.appendChild(button);
-	}
 
 	var m_mode = "JIS";
 	var MODE_DEF = {
@@ -332,9 +177,240 @@ var create_plugin = (function () {
 		}
 		m_gamepad_state = new_state;
 	}
+	
+	function base64encode_binary(data){
+		return btoa([...data].map(n => String.fromCharCode(n)).join(""));
+	}
+	
+	function base64decode_binary(data){
+		return new Uint8Array([...atob(data)].map(s => s.charCodeAt(0)));
+	}
+	
+	function base64encode_img(img, mime_type) {
+		var canvas = document.createElement('canvas');
+		canvas.width  = img.width;
+		canvas.height = img.height;
+		var ctx = canvas.getContext('2d');
+		ctx.drawImage(img, 0, 0);
+		var data = ctx.getImageData(0, 0, img.width, img.height).data;
 
+		//debug
+		//canvas.setAttribute("style", `position:absolute; top:50%; left:50%; width:50px; height:50px;`);
+		//document.body.appendChild(canvas);
+
+		var base64 = base64encode_binary(data);
+		return base64;
+	}
+
+	var m_imgs = [
+		{
+			url : "/img/title.png",
+			src : null,
+			img : null,
+			tex_id : "title",
+			tex : null,
+		},
+		{
+			url : "/img/font_ascii.png",
+			src : null,
+			img : null,
+			tex_id : "font_ascii",
+			tex : null,
+		},
+	];
+	function load_imgs(idx){
+		if(idx === undefined){
+			idx = 0;
+		}else if(idx >= m_imgs.length){
+			return;
+		}
+		var base_url = "plugins/jetavator";
+		if(m_imgs[idx].url){
+			m_plugin_host.getFile(base_url + m_imgs[idx].url, (data) => {
+				if(Array.isArray(data)){
+					data = data[0];
+				}
+				m_imgs[idx].img = document.createElement("img");
+				m_imgs[idx].img.addEventListener('load', (e) => {
+					m_imgs[idx].tex = base64encode_img(m_imgs[idx].img);
+					load_imgs(idx + 1);
+				});
+				m_imgs[idx].img.src = "data:image/png;base64," + base64encode_binary(data);
+			});
+		}
+	}
+
+	function upload_imgs(pstcore, pst){
+		var tex_json = {
+			nodes : [],
+		};
+		for(var node of m_imgs){
+			tex_json.nodes.push({
+				width : node.img.width,
+				stride : node.img.width*4,
+				height : node.img.height,
+				tex_id : node.tex_id,
+				tex : node.tex,
+			});
+			if(node.tex_id == "font_ascii"){//font
+				var img = node.img;
+				var canvas = document.createElement('canvas');
+				canvas.width  = img.width;
+				canvas.height = img.height;
+				var ctx = canvas.getContext('2d', {
+					willReadFrequently: true
+				});
+				ctx.drawImage(img, 0, 0);
+
+                for(var i=0;i<96;i++){
+                    var width = 40;
+                    var height = 50;
+                    var stride = width*4;
+					var ox = i*50+6;
+					var oy = 50;
+					var data = ctx.getImageData(ox, oy, width, height).data;
+					tex_json.nodes.push({
+						width,
+						stride,
+						height,
+						tex_id : `${node.tex_id}[${i+32}]`,
+						tex : base64encode_binary(data),
+					});
+                }
+			}//font
+		}
+		var tex_json_str = JSON.stringify(tex_json);
+		pstcore.pstcore_set_param(pst, "renderer", "overlay_tex", tex_json_str);
+	}
+
+	function push_str(nodes, str, x, y, w, coodinate){
+		var offset = 0;
+		switch(coodinate){
+			case "left":
+				offset = 0;
+				break;
+			case "right":
+				offset = -w*str.length;
+				break;
+			case "center":
+			default:
+				offset = -w*str.length/2;
+				break;
+		}
+		for(var i=0;i<str.length;i++){
+			nodes.push({
+				width : w,
+				height : w*1.25,
+				x : x + w*i + offset,
+				y : y,
+				tex_id : `font_ascii[${str.charCodeAt(i)}]`,
+			});
+		}
+	}
+
+	function wait_play_start(timeout_callback){
+		var overlay_json = {
+			nodes : [
+				{
+					width : 100,
+					height : 25,
+					x : 0,
+					y : 0,
+					tex_id : "title",
+				},
+			],
+		};
+
+		push_str(overlay_json.nodes, "CONTROLLER MODE", 50, 60, 4);
+		push_str(overlay_json.nodes, "[*]YOKO SENKAI", 50, 65, 4);
+		push_str(overlay_json.nodes, "[ ]TATE SENKAI", 50, 70, 4);
+
+		push_str(overlay_json.nodes, "[START]", 50, 80, 4);
+
+		push_str(overlay_json.nodes, ">>", 10, 80, 4);
+		push_str(overlay_json.nodes, "<<", 90, 80, 4);
+
+		var now = new Date().getTime();
+		var elapsed_sec = (now - m_state_st) / 1e3;
+		var remain = 30 - elapsed_sec;
+		if(remain > 0){
+			push_str(overlay_json.nodes, "TIMEOUT", 50, 40, 4);
+			push_str(overlay_json.nodes, remain.toFixed(0), 50, 45, 4);
+			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
+		}else{
+			timeout_callback();
+		}
+	}
+
+	function playing(timeout_callback){
+		handleGamepad();
+		
+		var overlay_json = {
+			nodes : [],
+		};
+		var now = new Date().getTime();
+		var elapsed_sec = (now - m_state_st) / 1e3;
+		var remain = 300 - elapsed_sec;
+		var score = 0;
+		if(remain > 0){
+			push_str(overlay_json.nodes, "Time  : ", 40, 5, 4, "left");
+			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5, 4, "right");
+			push_str(overlay_json.nodes, "Score : ", 40, 10, 4, "left");
+			push_str(overlay_json.nodes, score + "pt ", 95, 10, 4, "right");
+			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
+		}else{
+			timeout_callback();
+		}
+	}
+
+	var m_state = "none";
+	var m_state_st = 0;
+	var m_pst = 0;
+	var m_pstcore = null;
 	function init() {
-		setInterval(handleGamepad, 100);
+		m_state = "load_imgs";
+		var state_poling = setInterval(() => {
+			switch(m_state){
+				case "load_imgs":
+					load_imgs();
+					m_state = "wait_load_imgs";
+					break;
+				case "wait_load_imgs":
+					if(m_imgs[m_imgs.length - 1].tex){
+						m_state = "wait_pst";
+					}
+					break;
+				case "wait_pst":
+					m_pst = app.get_pst();
+					if(m_pst){
+						m_pstcore = app.get_pstcore();
+						upload_imgs(m_pstcore, m_pst);
+						m_state_st = new Date().getTime();
+						m_state = "wait_play_start";
+					}
+					break;
+				case "wait_play_start":
+					wait_play_start(() => {
+						m_state_st = new Date().getTime();
+						m_state = "start_play";
+					});
+					break;
+				case "start_play":
+					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
+					m_state_st = new Date().getTime();
+					m_state = "playing";
+					break;
+				case "playing":
+					playing(() => {
+						m_state_st = new Date().getTime();
+						m_state = "end_play";
+					});
+					break;
+				case "end_play":
+					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
+					break;
+			}
+		}, 100);
 	}
 
 	return function (plugin_host) {
@@ -343,8 +419,8 @@ var create_plugin = (function () {
 			m_is_init = true;
 			init();
 		}
-		var plugin = {};
+		var plugin = {
+		};
 		return plugin;
 	}
-	return self;
 })();
