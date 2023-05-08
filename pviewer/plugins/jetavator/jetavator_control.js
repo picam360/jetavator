@@ -171,17 +171,29 @@ var create_plugin = (function () {
 		}
 		var base_url = "plugins/jetavator";
 		if(m_imgs[idx].url){
-			m_plugin_host.getFile(base_url + m_imgs[idx].url, (data) => {
-				if(Array.isArray(data)){
-					data = data[0];
-				}
+			var data_handler = (data) => {
 				m_imgs[idx].img = document.createElement("img");
 				m_imgs[idx].img.addEventListener('load', (e) => {
 					m_imgs[idx].tex = base64encode_img(m_imgs[idx].img);
 					load_imgs(idx + 1);
 				});
 				m_imgs[idx].img.src = "data:image/png;base64," + base64encode_binary(data);
-			});
+			};
+			if(m_plugin_host.getFileFromUpstream){
+				m_plugin_host.getFileFromUpstream(base_url + m_imgs[idx].url, (data) => {
+					if(Array.isArray(data)){
+						data = data[0];
+					}
+					data_handler(data);
+				});
+			}else{
+				m_plugin_host.getFile(base_url + m_imgs[idx].url, (data) => {
+					if(Array.isArray(data)){
+						data = data[0];
+					}
+					data_handler(data);
+				});
+			}
 		}
 	}
 
