@@ -75,7 +75,7 @@ var create_plugin = (function () {
 		}
 	}, false);
 
-	function handleGamepad() {
+	function handleGamepad(callback) {
 		if(!m_gamepad_id){
 			var id = get_last_gamepad_id();
 			if(id){
@@ -117,62 +117,7 @@ var create_plugin = (function () {
 		}
 		for (var key in new_state) {
 			if (new_state[key] != m_gamepad_state[key]) {
-				var crawler_mode = (new_state["10_BUTTON_PUSHED"] || new_state["11_BUTTON_PUSHED"]);
-				if (crawler_mode != m_crawler_mode) {
-					m_crawler_mode = crawler_mode;
-					{
-						var cmd = VEHICLE_DOMAIN + "reset";
-						m_plugin_host.send_command(cmd);
-					}
-				}
-
-				var table;
-				if (m_crawler_mode) {
-					//https://gamepad-tester.com/
-					table = {
-						"1_AXIS_PERCENT": "CrawlerMode_LeftVertical",
-						"3_AXIS_PERCENT": "CrawlerMode_RightVertical",
-					};
-				} else {
-					//https://gamepad-tester.com/
-					table = {
-						"0_AXIS_PERCENT": "LeftHorizon",
-						"1_AXIS_PERCENT": "LeftVertical",
-						"2_AXIS_PERCENT": "RightHorizon",
-						"3_AXIS_PERCENT": "RightVertical",
-						"4_BUTTON_PUSHED": "LeftBackOpt",
-						"5_BUTTON_PUSHED": "RightBackOpt",
-						"6_BUTTON_PERCENT": "LeftBack",
-						"7_BUTTON_PERCENT": "RightBack",
-					};
-				}
-				if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
-					if (!MODE_DEF[m_mode][table[key]].mod) {
-						continue;
-					}
-					var value = new_state[key].toFixed(0);
-					if (MODE_DEF[m_mode][table[key]].dir) {
-						value *= MODE_DEF[m_mode][table[key]].dir;
-					}
-					for (var key2 in new_state) { // execute command
-						if (new_state[key2] && table[key2] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key2]]) {
-							if (!MODE_DEF[m_mode][table[key2]].cmd) {
-								continue;
-							}
-							var params = MODE_DEF[m_mode][table[key2]].cmd.split(' ');
-							if (params.length == 2 && params[1] == table[key]) {
-								switch (params[0]) {
-									case "reverse":
-										value *= -1;
-										break;
-								}
-							}
-						}
-					}
-					var cmd = VEHICLE_DOMAIN + MODE_DEF[m_mode][table[key]].mod + " " + value;
-					m_plugin_host.send_command(cmd);
-					console.log(cmd);
-				}
+				callback(key, new_state);
 			}
 		}
 		m_gamepad_state = new_state;
@@ -308,7 +253,69 @@ var create_plugin = (function () {
 		}
 	}
 
+	var m_wait_play_start_mode = "start";
 	function wait_play_start(timeout_callback){
+		handleGamepad((key, new_state) => {
+			if(!new_state[key]){
+				return;
+			}
+			var cmd = "";
+			switch(key){
+				case "0_BUTTON_PUSHED":
+					cmd = "cancel";
+					break;
+				case "1_BUTTON_PUSHED":
+					cmd = "ok";
+					break;
+				case "12_BUTTON_PUSHED":
+					cmd = "up";
+					break;
+				case "13_BUTTON_PUSHED":
+					cmd = "down";
+					break;
+				case "14_BUTTON_PUSHED":
+					cmd = "left";
+					break;
+				case "15_BUTTON_PUSHED":
+					cmd = "right";
+					break;
+			}
+			switch(m_wait_play_start_mode){
+				case "yoko_senkai":
+					switch(cmd){
+						case "down":
+							m_wait_play_start_mode = "tate_senkai";
+							break;
+						case "ok":
+							m_mode = "JIS";
+							break;
+					}
+					break;
+				case "tate_senkai":
+					switch(cmd){
+						case "up":
+							m_wait_play_start_mode = "yoko_senkai";
+							break;
+						case "down":
+							m_wait_play_start_mode = "start";
+							break;
+						case "ok":
+							m_mode = "CAT";
+							break;
+					}
+					break;
+				case "start":
+					switch(cmd){
+						case "up":
+							m_wait_play_start_mode = "tate_senkai";
+							break;
+						case "ok":
+							m_state_st -= 30000;
+							break;
+					}
+					break;
+			}
+		});
 		var overlay_json = {
 			nodes : [
 				{
@@ -321,14 +328,31 @@ var create_plugin = (function () {
 			],
 		};
 
+		var cur_y = 0;
 		push_str(overlay_json.nodes, "CONTROLLER MODE", 50, 60, 4);
-		push_str(overlay_json.nodes, "[*]YOKO SENKAI", 50, 65, 4);
-		push_str(overlay_json.nodes, "[ ]TATE SENKAI", 50, 70, 4);
+		if(m_mode == "JIS"){
+			push_str(overlay_json.nodes, "[*]YOKO SENKAI", 50, 65, 4);
+			push_str(overlay_json.nodes, "[ ]TATE SENKAI", 50, 70, 4);
+		}else{
+			push_str(overlay_json.nodes, "[ ]YOKO SENKAI", 50, 65, 4);
+			push_str(overlay_json.nodes, "[*]TATE SENKAI", 50, 70, 4);
+		}
 
-		push_str(overlay_json.nodes, "[START]", 50, 80, 4);
+		push_str(overlay_json.nodes, "START", 50, 80, 4);
 
-		push_str(overlay_json.nodes, ">>", 10, 80, 4);
-		push_str(overlay_json.nodes, "<<", 90, 80, 4);
+		if(m_wait_play_start_mode == "yoko_senkai"){
+			cur_y = 65;
+		}
+		if(m_wait_play_start_mode == "tate_senkai"){
+			cur_y = 70;
+		}
+		if(m_wait_play_start_mode == "start"){
+			cur_y = 80;
+		}
+		if(cur_y > 0){
+			push_str(overlay_json.nodes, ">>", 10, cur_y, 4);
+			push_str(overlay_json.nodes, "<<", 90, cur_y, 4);
+		}
 
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
@@ -343,8 +367,66 @@ var create_plugin = (function () {
 	}
 
 	function playing(timeout_callback){
-		handleGamepad();
-		
+		handleGamepad((key, new_state) => {
+
+			var crawler_mode = (new_state["10_BUTTON_PUSHED"] || new_state["11_BUTTON_PUSHED"]);
+			if (crawler_mode != m_crawler_mode) {
+				m_crawler_mode = crawler_mode;
+				{
+					var cmd = VEHICLE_DOMAIN + "reset";
+					m_plugin_host.send_command(cmd);
+				}
+			}
+
+			var table;
+			if (m_crawler_mode) {
+				//https://gamepad-tester.com/
+				table = {
+					"1_AXIS_PERCENT": "CrawlerMode_LeftVertical",
+					"3_AXIS_PERCENT": "CrawlerMode_RightVertical",
+				};
+			} else {
+				//https://gamepad-tester.com/
+				table = {
+					"0_AXIS_PERCENT": "LeftHorizon",
+					"1_AXIS_PERCENT": "LeftVertical",
+					"2_AXIS_PERCENT": "RightHorizon",
+					"3_AXIS_PERCENT": "RightVertical",
+					"4_BUTTON_PUSHED": "LeftBackOpt",
+					"5_BUTTON_PUSHED": "RightBackOpt",
+					"6_BUTTON_PERCENT": "LeftBack",
+					"7_BUTTON_PERCENT": "RightBack",
+				};
+			}
+			if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
+				if (!MODE_DEF[m_mode][table[key]].mod) {
+					return;
+				}
+				var value = new_state[key].toFixed(0);
+				if (MODE_DEF[m_mode][table[key]].dir) {
+					value *= MODE_DEF[m_mode][table[key]].dir;
+				}
+				for (var key2 in new_state) { // execute command
+					if (new_state[key2] && table[key2] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key2]]) {
+						if (!MODE_DEF[m_mode][table[key2]].cmd) {
+							continue;
+						}
+						var params = MODE_DEF[m_mode][table[key2]].cmd.split(' ');
+						if (params.length == 2 && params[1] == table[key]) {
+							switch (params[0]) {
+								case "reverse":
+									value *= -1;
+									break;
+							}
+						}
+					}
+				}
+				var cmd = VEHICLE_DOMAIN + MODE_DEF[m_mode][table[key]].mod + " " + value;
+				m_plugin_host.send_command(cmd);
+				console.log(cmd);
+			}
+		});
+
 		var overlay_json = {
 			nodes : [],
 		};
