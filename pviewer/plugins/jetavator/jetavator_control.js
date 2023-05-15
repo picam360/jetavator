@@ -126,41 +126,14 @@ var create_plugin = (function () {
 	function base64encode_binary(data){
 		return btoa([...data].map(n => String.fromCharCode(n)).join(""));
 	}
-	
-	function base64decode_binary(data){
-		return new Uint8Array([...atob(data)].map(s => s.charCodeAt(0)));
-	}
-	
-	function base64encode_img(img, mime_type) {
-		var canvas = document.createElement('canvas');
-		canvas.width  = img.width;
-		canvas.height = img.height;
-		var ctx = canvas.getContext('2d');
-		ctx.drawImage(img, 0, 0);
-		var data = ctx.getImageData(0, 0, img.width, img.height).data;
-
-		//debug
-		//canvas.setAttribute("style", `position:absolute; top:50%; left:50%; width:50px; height:50px;`);
-		//document.body.appendChild(canvas);
-
-		var base64 = base64encode_binary(data);
-		return base64;
-	}
 
 	var m_imgs = [
 		{
 			url : "/img/title.png",
-			src : null,
-			img : null,
+			format : "png",
 			tex_id : "title",
 			tex : null,
-		},
-		{
-			url : "/img/font_ascii.png",
-			src : null,
-			img : null,
-			tex_id : "font_ascii",
-			tex : null,
+			prepared : false,
 		},
 	];
 	function load_imgs(idx){
@@ -171,29 +144,21 @@ var create_plugin = (function () {
 		}
 		var base_url = "plugins/jetavator";
 		if(m_imgs[idx].url){
-			var data_handler = (data) => {
-				m_imgs[idx].img = document.createElement("img");
-				m_imgs[idx].img.addEventListener('load', (e) => {
-					m_imgs[idx].tex = base64encode_img(m_imgs[idx].img);
-					load_imgs(idx + 1);
-				});
-				m_imgs[idx].img.src = "data:image/png;base64," + base64encode_binary(data);
-			};
+			var getFile = m_plugin_host.getFile;
 			if(m_plugin_host.getFileFromUpstream){
-				m_plugin_host.getFileFromUpstream(base_url + m_imgs[idx].url, (data) => {
-					if(Array.isArray(data)){
-						data = data[0];
-					}
-					data_handler(data);
-				});
-			}else{
-				m_plugin_host.getFile(base_url + m_imgs[idx].url, (data) => {
-					if(Array.isArray(data)){
-						data = data[0];
-					}
-					data_handler(data);
-				});
+				getFile = m_plugin_host.getFileFromUpstream;
 			}
+			getFile(base_url + m_imgs[idx].url, (data) => {
+				if(Array.isArray(data)){
+					data = data[0];
+				}
+				m_imgs[idx].tex = base64encode_binary(data);
+				m_imgs[idx].prepared = true;
+				load_imgs(idx + 1);
+			});
+		}else{
+			m_imgs[idx].prepared = true;
+			load_imgs(idx + 1);
 		}
 	}
 
@@ -203,38 +168,10 @@ var create_plugin = (function () {
 		};
 		for(var node of m_imgs){
 			tex_json.nodes.push({
-				width : node.img.width,
-				stride : node.img.width*4,
-				height : node.img.height,
+				format : node.format,
 				tex_id : node.tex_id,
 				tex : node.tex,
 			});
-			if(node.tex_id == "font_ascii"){//font
-				var img = node.img;
-				var canvas = document.createElement('canvas');
-				canvas.width  = img.width;
-				canvas.height = img.height;
-				var ctx = canvas.getContext('2d', {
-					willReadFrequently: true
-				});
-				ctx.drawImage(img, 0, 0);
-
-                for(var i=0;i<96;i++){
-                    var width = 40;
-                    var height = 50;
-                    var stride = width*4;
-					var ox = i*50+6;
-					var oy = 50;
-					var data = ctx.getImageData(ox, oy, width, height).data;
-					tex_json.nodes.push({
-						width,
-						stride,
-						height,
-						tex_id : `${node.tex_id}[${i+32}]`,
-						tex : base64encode_binary(data),
-					});
-                }
-			}//font
 		}
 		var tex_json_str = JSON.stringify(tex_json);
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_tex", tex_json_str);
@@ -260,7 +197,7 @@ var create_plugin = (function () {
 				height : w*1.25,
 				x : x + w*i + offset,
 				y : y,
-				tex_id : `font_ascii[${str.charCodeAt(i)}]`,
+				tex_id : `ascii[${str.charCodeAt(i)}]`,
 			});
 		}
 	}
@@ -470,7 +407,7 @@ var create_plugin = (function () {
 					m_state = "wait_load_imgs";
 					break;
 				case "wait_load_imgs":
-					if(m_imgs[m_imgs.length - 1].tex){
+					if(m_imgs[m_imgs.length - 1].prepared){
 						m_state = "wait_pst";
 					}
 					break;
