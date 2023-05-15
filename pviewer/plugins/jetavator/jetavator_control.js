@@ -177,7 +177,7 @@ var create_plugin = (function () {
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_tex", tex_json_str);
 	}
 
-	function push_str(nodes, str, x, y, w, coodinate){
+	function push_str(nodes, str, x, y, z, w, coodinate){
 		var offset = 0;
 		switch(coodinate){
 			case "left":
@@ -191,12 +191,14 @@ var create_plugin = (function () {
 				offset = -w*str.length/2;
 				break;
 		}
+		const INT_MAX = 0x7FFFFFFF;
 		for(var i=0;i<str.length;i++){
 			nodes.push({
 				width : w,
 				height : w*1.25,
 				x : x + w*i + offset,
-				y : y,
+				y,
+				z : (z > 1 ? z : INT_MAX),
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
 			});
 		}
@@ -272,43 +274,54 @@ var create_plugin = (function () {
 					height : 25,
 					x : 0,
 					y : 0,
+					z : 10,
 					tex_id : "title",
 				},
 			],
 		};
 
 		var cur_y = 0;
-		push_str(overlay_json.nodes, "CONTROLLER MODE", 50, 60, 4);
-		if(m_mode == "JIS"){
-			push_str(overlay_json.nodes, "[*]YOKO SENKAI", 50, 65, 4);
-			push_str(overlay_json.nodes, "[ ]TATE SENKAI", 50, 70, 4);
-		}else{
-			push_str(overlay_json.nodes, "[ ]YOKO SENKAI", 50, 65, 4);
-			push_str(overlay_json.nodes, "[*]TATE SENKAI", 50, 70, 4);
-		}
-
-		push_str(overlay_json.nodes, "START", 50, 80, 4);
+		var font_size = [ 4, 4, 4 ];
+		var z_pos = [ 10, 10, 10 ];
 
 		if(m_wait_play_start_mode == "yoko_senkai"){
 			cur_y = 65;
+			font_size[0] = 5;
+			z_pos[0] = 5;
 		}
 		if(m_wait_play_start_mode == "tate_senkai"){
 			cur_y = 70;
+			font_size[1] = 5;
+			z_pos[1] = 5;
 		}
 		if(m_wait_play_start_mode == "start"){
 			cur_y = 80;
+			font_size[2] = 5;
+			z_pos[2] = 5;
 		}
+
+		push_str(overlay_json.nodes, "CONTROLLER MODE", 50, 60, 10, 4);
+		if(m_mode == "JIS"){
+			push_str(overlay_json.nodes, "[*]YOKO SENKAI", 50, 65, z_pos[0], font_size[0]);
+			push_str(overlay_json.nodes, "[ ]TATE SENKAI", 50, 70, z_pos[1], font_size[1]);
+		}else{
+			push_str(overlay_json.nodes, "[ ]YOKO SENKAI", 50, 65, z_pos[0], font_size[0]);
+			push_str(overlay_json.nodes, "[*]TATE SENKAI", 50, 70, z_pos[1], font_size[1]);
+		}
+
+		push_str(overlay_json.nodes, "START", 50, 80, z_pos[2], font_size[2]);
+
 		if(cur_y > 0){
-			push_str(overlay_json.nodes, ">>", 10, cur_y, 4);
-			push_str(overlay_json.nodes, "<<", 90, cur_y, 4);
+			push_str(overlay_json.nodes, ">>", 10, cur_y, 5, 5);
+			push_str(overlay_json.nodes, "<<", 90, cur_y, 5, 5);
 		}
 
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
 		var remain = 30 - elapsed_sec;
 		if(remain > 0){
-			push_str(overlay_json.nodes, "TIMEOUT", 50, 40, 4);
-			push_str(overlay_json.nodes, remain.toFixed(0), 50, 45, 4);
+			push_str(overlay_json.nodes, "TIMEOUT", 50, 40, 20, 4);
+			push_str(overlay_json.nodes, remain.toFixed(0), 50, 45, 20, 4);
 			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 		}else{
 			timeout_callback();
@@ -384,10 +397,10 @@ var create_plugin = (function () {
 		var remain = 300 - elapsed_sec;
 		var score = 0;
 		if(remain > 0){
-			push_str(overlay_json.nodes, "Time  : ", 40, 5, 4, "left");
-			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5, 4, "right");
-			push_str(overlay_json.nodes, "Score : ", 40, 10, 4, "left");
-			push_str(overlay_json.nodes, score + "pt ", 95, 10, 4, "right");
+			push_str(overlay_json.nodes, "Time  : ", 40, 5, 10, 4, "left");
+			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5, 10, 4, "right");
+			push_str(overlay_json.nodes, "Score : ", 40, 10, 10, 4, "left");
+			push_str(overlay_json.nodes, score + "pt ", 95, 10, 10, 4, "right");
 			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 		}else{
 			timeout_callback();
