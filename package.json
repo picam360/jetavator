@@ -14,7 +14,7 @@
   "dependencies": {
     "i2c-bus": "^5.2.2",
     "pca9685": "^5.0.0",
-    "node-pserver": "0.4.0",
+    "node-pserver": "0.4.1",
     "recursive-copy": "*",
     "rimraf": "*"
   },
