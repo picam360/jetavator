@@ -19,7 +19,7 @@ void setup() {
   scale.set_scale(2280.f);  // この値はあなたのロードセルによって異なるかもしれません。適切な値に調整する必要があります。
   scale.tare(); // スケールをゼロにリセットします
 
-  // Cofloat weightnnect to Wi-Fi
+  // Connect to Wi-Fi
   if (!WiFi.config(ip, gateway, subnet)){
     Serial.println("Failed to configure!");
   }
