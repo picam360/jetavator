@@ -2,8 +2,6 @@
 process.chdir(__dirname);
 
 const fs = require("fs");
-const rimraf = require("rimraf");
-const rcopy = require('recursive-copy');
 const { execSync } = require('child_process');
 
 try{
