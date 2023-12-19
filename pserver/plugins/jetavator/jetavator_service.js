@@ -69,7 +69,6 @@ module.exports = {
 						const obj = JSON.parse(data);
 						if(m_pst){
 							var score = obj.weight.toFixed(0);
-							console.log(score);
 							m_pstcore.pstcore_set_param(m_pst, plugin.name, "score", score);
 							return;
 						}
