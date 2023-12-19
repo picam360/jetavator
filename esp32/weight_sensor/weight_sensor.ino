@@ -50,7 +50,7 @@ void setup() {
   // Handle Web Server
   server.on("/info.json", HTTP_GET, [](AsyncWebServerRequest *request){
     char buffer[64];
-    sprintf(buffer, "{weight:%f}", weight);
+    sprintf(buffer, "{\"weight\":%f}", weight);
     request->send(200, "text/plain", buffer);
   });
 

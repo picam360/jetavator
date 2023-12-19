@@ -1,5 +1,8 @@
 module.exports = {
 	create_plugin: function (plugin_host) {
+		var m_options = {};
+		var m_pst = 0;
+
 		console.log("create jetavator service plugin");
 		var { PythonShell } = require('python-shell');
 
@@ -48,8 +51,49 @@ module.exports = {
 			}
 		}
 
+		const http = require('http');
+		setInterval(() => {
+			if(!m_options[plugin.name] || !m_options[plugin.name]["weight_url"]){
+				return;
+			}
+			http.get(url, (res) => {
+				let data = '';
+
+				res.on('data', (chunk) => {
+					data += chunk;
+				});
+
+				res.on('end', () => {
+					try {
+						const parsedData = JSON.parse(data);
+						console.log(parsedData);
+					} catch (e) {
+						console.error(e.message);
+					}
+				});
+
+			}).on('error', (err) => {
+				console.error('Error: ' + err.message);
+			});
+		}, 1000);
+
 		var plugin = {
 			name: "jetavator_service",
+            init_options: function (options) {
+                m_options = options;
+            },
+            pst_started: function (pstcore, pst) {
+				if(m_pst){
+					return;
+				}
+
+				m_pst = pst;
+            },
+            pst_stopped: function (pstcore, pst) {
+				if(pst == m_pst){
+					m_pst = 0;
+				}
+            },
 			command_handler: function (cmd) {
 				var params = cmd.split(' ');
 				switch (params[0]) {

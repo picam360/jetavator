@@ -12,6 +12,9 @@
 	    "plugins/network/host.js",
 	    "plugins/jetavator/jetavator_service.js"
     ],
+    "jetavator_service" : {
+        "weight_url" : "http:10.42.0.100/info.json"
+    },
     "stream_params" : {
         "default" : {
             "dealer.def" : "mux name=mux ! mjpeg_tegra_decoder name=decoder cudamem=1 ! pcuda_remapper name=remapper ho=1 edge_r=\"0.1\" s=@APP.SIZE@ n_vstreams=1",
