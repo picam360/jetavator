@@ -1,6 +1,7 @@
 module.exports = {
 	create_plugin: function (plugin_host) {
 		var m_options = {};
+		var m_pstcore = null;
 		var m_pst = 0;
 
 		console.log("create jetavator service plugin");
@@ -56,7 +57,7 @@ module.exports = {
 			if(!m_options[plugin.name] || !m_options[plugin.name]["weight_url"]){
 				return;
 			}
-			http.get(url, (res) => {
+			http.get(m_options[plugin.name]["weight_url"], (res) => {
 				let data = '';
 
 				res.on('data', (chunk) => {
@@ -65,8 +66,13 @@ module.exports = {
 
 				res.on('end', () => {
 					try {
-						const parsedData = JSON.parse(data);
-						console.log(parsedData);
+						const obj = JSON.parse(data);
+						if(m_pst){
+							var score = obj.weight.toFixed(0);
+							console.log(score);
+							m_pstcore.pstcore_set_param(m_pst, plugin.name, "score", score);
+							return;
+						}
 					} catch (e) {
 						console.error(e.message);
 					}
@@ -87,6 +93,7 @@ module.exports = {
 					return;
 				}
 
+				m_pstcore = pstcore;
 				m_pst = pst;
             },
             pst_stopped: function (pstcore, pst) {

@@ -395,12 +395,11 @@ var create_plugin = (function () {
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
 		var remain = 300 - elapsed_sec;
-		var score = 0;
 		if(remain > 0){
 			push_str(overlay_json.nodes, "Time  : ", 40, 5, 10, 4, "left");
 			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5, 10, 4, "right");
 			push_str(overlay_json.nodes, "Score : ", 40, 10, 10, 4, "left");
-			push_str(overlay_json.nodes, score + "pt ", 95, 10, 10, 4, "right");
+			push_str(overlay_json.nodes, m_score + "pt ", 95, 10, 10, 4, "right");
 			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 		}else{
 			timeout_callback();
@@ -411,6 +410,7 @@ var create_plugin = (function () {
 	var m_state_st = 0;
 	var m_pst = 0;
 	var m_pstcore = null;
+	var m_score = 0;
 	function init() {
 		m_state = "load_imgs";
 		var state_poling = setInterval(() => {
@@ -428,6 +428,14 @@ var create_plugin = (function () {
 					m_pst = app.get_pst();
 					if(m_pst){
 						m_pstcore = app.get_pstcore();
+						m_pstcore.pstcore_add_set_param_done_callback(m_pst, (pst_name, param, value)=>{
+							if(pst_name == "jetavator_service"){
+								if(param == "score"){
+									m_score = value;
+								}
+							}
+						});
+
 						upload_imgs(m_pstcore, m_pst);
 						m_state_st = new Date().getTime();
 						m_state = "wait_play_start";
