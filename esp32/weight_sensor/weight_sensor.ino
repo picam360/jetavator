@@ -3,20 +3,34 @@
 #include <HX711.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-
-AsyncWebServer server(80);
-
-HX711 scale;
-float weight = 0.0;
+#include <ESP32Servo.h>
 
 #ifdef TARGET_DEVICE_ATOMS3
 #include <M5AtomS3.h>     // ATOMS3用ライブラリ
 #define SDA_PIN 2
 #define SCL_PIN 1
+#define SERVO_PIN 38
 #elif TARGET_DEVICE_ESP_DEVKIT_C
 #define SDA_PIN SDA
 #define SCL_PIN SCL
+#define SERVO_PIN 38
 #endif
+
+const int MIN_PULSE = 500;
+const int MAX_PULSE = 2400;
+const int MIN_ANGLE = -90;
+const int MAX_ANGLE = 90;
+
+AsyncWebServer server(80);
+
+HX711 scale;
+Servo servo;
+float weight = 0.0;
+int angle = 0;
+
+int get_pulse(int a){
+  return (a - MIN_ANGLE) * (MAX_PULSE - MIN_PULSE) / (MAX_ANGLE - MIN_ANGLE) + MIN_PULSE;
+}
 
 void setup() {
 #ifdef TARGET_DEVICE_ATOMS3
@@ -32,6 +46,9 @@ void setup() {
   scale.begin(SDA_PIN, SCL_PIN);
   scale.set_scale(2280.f);  // この値はあなたのロードセルによって異なるかもしれません。適切な値に調整する必要があります。
   scale.tare(); // スケールをゼロにリセットします
+
+  servo.setPeriodHertz(50);      // Standard 50hz servo
+  servo.attach(SERVO_PIN, MIN_PULSE, MAX_PULSE);
 
   // Connect to Wi-Fi
 #ifdef USE_STATIC_IP
@@ -66,18 +83,22 @@ void loop() {
 #ifdef TARGET_DEVICE_ATOMS3
   M5.Lcd.setTextColor(WHITE, BLACK);              // 文字色
   M5.Lcd.setTextFont(2);                          // フォント
-  M5.Lcd.setCursor(0, 40);                        // カーソル座標指定
+  M5.Lcd.setCursor(0, 0);                        // カーソル座標指定
   M5.Lcd.printf("SSID: %.10s\n", WiFi.SSID());       // SSID表示
   // M5.Lcd.printf("SSID: %s\n", WiFi.softAPSSID()); // アクセスポイント時のSSID表示
   M5.Lcd.setTextColor(ORANGE, BLACK);             // 文字色
   M5.Lcd.print("IP  : ");                         // IPアドレス表示
   M5.Lcd.println(WiFi.localIP());
   // M5.Lcd.println(WiFi.softAPIP());             // アクセスポイント時のIPアドレス表示
-  M5.Lcd.drawFastHLine(0, 74, 128, WHITE);        // 指定座標から横線
-  M5.Lcd.setCursor(0, 78);                        // カーソル座標指定
+  M5.Lcd.drawFastHLine(0, 34, 128, WHITE);        // 指定座標から横線
+  M5.Lcd.setCursor(0, 38);                        // カーソル座標指定
   M5.Lcd.setTextColor(CYAN, BLACK);               // 文字色
   M5.Lcd.printf("Weight: %.3f\n", weight);        // 
+  M5.Lcd.printf("Angle: %d\n", angle%90);        // 
+  M5.Lcd.printf("Pulse: %d\n", get_pulse(angle%90));        // 
 #endif
+
+  servo.write(get_pulse(angle++%90));
   
   delay(1000);
 }
