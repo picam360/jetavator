@@ -16,20 +16,34 @@
 #define SERVO_PIN 38
 #endif
 
-const int MIN_PULSE = 500;
-const int MAX_PULSE = 2400;
-const int MIN_ANGLE = -90;
-const int MAX_ANGLE = 90;
-
 AsyncWebServer server(80);
 
 HX711 scale;
 Servo servo;
 float weight = 0.0;
-int angle = 0;
+float angle = BASE_ANGLE;
+int pulse = (MAX_PULSE + MIN_PULSE) / 2;
 
-int get_pulse(int a){
-  return (a - MIN_ANGLE) * (MAX_PULSE - MIN_PULSE) / (MAX_ANGLE - MIN_ANGLE) + MIN_PULSE;
+int reset_state = 0;
+
+int get_pulse(float a){
+  float val = (a - MIN_ANGLE) * (MAX_PULSE - MIN_PULSE) / (MAX_ANGLE - MIN_ANGLE) + MIN_PULSE;
+  if(val > MAX_PULSE){
+    val = MAX_PULSE;
+  }
+  if(val < MIN_PULSE){
+    val = MIN_PULSE;
+  }
+  return (int)round(val);
+}
+
+bool isNumeric(String str) {
+  for (char c : str) {
+    if (!isDigit(c) && c != '.' && c != '-') {
+      return false;
+    }
+  }
+  return true;
 }
 
 void setup() {
@@ -66,9 +80,32 @@ void setup() {
 
   // Handle Web Server
   server.on("/info.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    char buffer[256] = {};
+    sprintf(buffer, "{\"score\":%.3f,\"weight\":%.3f,\"angle\":%.3f,\"pulse\":%d}", weight, weight, angle, pulse);
+    request->send(200, "text/plain", buffer);
+  });
+  server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){
+    reset_state = 1;
+    request->send(200, "text/plain", "OK");
+  });
+  server.on("/tare", HTTP_GET, [](AsyncWebServerRequest *request){
+    scale.tare(); // スケールをゼロにリセットします
+    request->send(200, "text/plain", "OK");
+  });
+  server.on("/set_angle", HTTP_GET, [](AsyncWebServerRequest *request){
     char buffer[64];
     sprintf(buffer, "{\"weight\":%f}", weight);
-    request->send(200, "text/plain", buffer);
+
+    if (request->hasArg("value")) {
+      if (isNumeric(request->arg("value"))) {
+        angle = request->arg("value").toFloat();
+        request->send(200, "text/plain", "OK");
+      }else{
+        request->send(200, "text/plain", "INVALID_VALUE");
+      }
+    } else {
+      request->send(200, "text/plain", "NO_VALUE");
+    }
   });
 
   // Start server
@@ -94,13 +131,45 @@ void loop() {
   M5.Lcd.setCursor(0, 38);                        // カーソル座標指定
   M5.Lcd.setTextColor(CYAN, BLACK);               // 文字色
   M5.Lcd.printf("Weight: %.3f\n", weight);        // 
-  M5.Lcd.printf("Angle: %d\n", angle%90);        // 
-  M5.Lcd.printf("Pulse: %d\n", get_pulse(angle%90));        // 
+  M5.Lcd.printf("Angle: %.3f\n", angle);        // 
+  M5.Lcd.printf("Pulse: %d\n", pulse);        // 
 #endif
 
-  servo.write(get_pulse(angle++%90));
+  switch(reset_state){
+    case 1:
+      angle = RESET_ANGLE;
+      reset_state++;
+      break;
+    case 2:
+      if(pulse == get_pulse(angle)){
+        angle = BASE_ANGLE;
+        reset_state++;
+      }
+      break;
+    case 3:
+      if(pulse == get_pulse(angle)){
+        scale.tare(); // スケールをゼロにリセットします
+        reset_state = 0;
+      }
+      break;
+    case 0:
+    default:
+      break;
+  }
+
+  {
+    const int threashold = 10;
+    int _pulse = get_pulse(angle);
+    int dif = _pulse - pulse;
+    if(abs(dif) > threashold){
+      dif = (dif > 0 ? threashold : -threashold);
+    }
+    pulse += dif;
+
+    servo.write(pulse);
+  }
   
-  delay(1000);
+  delay(20);
 }
 
 

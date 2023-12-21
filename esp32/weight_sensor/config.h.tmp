@@ -11,3 +11,11 @@ const IPAddress subnet(255,255,255,0);
 //select one
 //#define TARGET_DEVICE_ATOMS3
 //#define TARGET_DEVICE_ESP_DEVKIT_C
+
+const int MIN_PULSE = 500;
+const int MAX_PULSE = 2400;
+const int MIN_ANGLE = -90;
+const int MAX_ANGLE = 90;
+
+const int BASE_ANGLE = 5;
+const int RESET_ANGLE = 45;

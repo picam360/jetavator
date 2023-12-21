@@ -52,12 +52,34 @@ module.exports = {
 			}
 		}
 
-		const http = require('http');
-		setInterval(() => {
-			if(!m_options[plugin.name] || !m_options[plugin.name]["weight_url"]){
+		function reset_play_table(){
+			if(!m_options[plugin.name] || !m_options[plugin.name]["play_table_url"]){
+				console.log("no play_table_url in config file");
 				return;
 			}
-			http.get(m_options[plugin.name]["weight_url"], (res) => {
+			http.get(m_options[plugin.name]["play_table_url"] + "/reset", (res) => {
+				let data = '';
+
+				res.on('data', (chunk) => {
+					data += chunk;
+				});
+
+				res.on('end', () => {
+					console.log("play_table.reset", data);
+				});
+
+			}).on('error', (err) => {
+				console.error('Error: ' + err.message);
+			});
+		}
+
+		const http = require('http');
+		setInterval(() => {
+			if(!m_options[plugin.name] || !m_options[plugin.name]["play_table_url"]){
+				console.log("no play_table_url in config file");
+				return;
+			}
+			http.get(m_options[plugin.name]["play_table_url"] + "/info.json", (res) => {
 				let data = '';
 
 				res.on('data', (chunk) => {
@@ -68,7 +90,7 @@ module.exports = {
 					try {
 						const obj = JSON.parse(data);
 						if(m_pst){
-							var score = obj.weight.toFixed(0);
+							var score = obj.score.toFixed(0);
 							m_pstcore.pstcore_set_param(m_pst, plugin.name, "score", score);
 							return;
 						}
@@ -91,6 +113,8 @@ module.exports = {
 				if(m_pst){
 					return;
 				}
+				
+				reset_play_table();
 
 				m_pstcore = pstcore;
 				m_pst = pst;

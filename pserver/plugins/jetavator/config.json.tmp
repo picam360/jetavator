@@ -13,7 +13,7 @@
 	    "plugins/jetavator/jetavator_service.js"
     ],
     "jetavator_service" : {
-        "weight_url" : "http:10.42.0.100/info.json"
+        "play_table_url" : "http:10.42.0.100"
     },
     "stream_params" : {
         "default" : {
