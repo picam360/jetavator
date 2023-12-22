@@ -157,25 +157,25 @@ var create_plugin = (function () {
 				case "15_BUTTON_PUSHED":
 					cmd = "right";
 					break;
-				//quest touch
-				case "RIGHT_0_BUTTON_PUSHED":
+				//quest touch : 4_BUTTON A, 5_BUTTON B
+				case "RIGHT_5_BUTTON_PUSHED":
 					if(new_state[key]){
 						cmd = "cancel";
 					}
 					break;
-				case "RIGHT_1_BUTTON_PUSHED":
+				case "RIGHT_4_BUTTON_PUSHED":
 					if(new_state[key]){
 						cmd = "ok";
 					}
 					break;
 				case "RIGHT_3_AXIS_FORWARD":
 					if(new_state[key]){
-						cmd = "up";
+						cmd = "down";
 					}
 					break;
 				case "RIGHT_3_AXIS_BACKWARD":
 					if(new_state[key]){
-						cmd = "down";
+						cmd = "up";
 					}
 					break;
 				case "RIGHT_2_AXIS_FORWARD":
@@ -219,7 +219,7 @@ var create_plugin = (function () {
 							m_wait_play_start_mode = "tate_senkai";
 							break;
 						case "ok":
-							m_state_st -= 30000;
+							m_state_st -= 1000000;
 							break;
 					}
 					break;
@@ -375,10 +375,14 @@ var create_plugin = (function () {
 		var elapsed_sec = (now - m_state_st) / 1e3;
 		var remain = 300 - elapsed_sec;
 		if(remain > 0){
-			push_str(overlay_json.nodes, "Time  : ", 40, 5, 10, 4, "left");
-			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5, 10, 4, "right");
-			push_str(overlay_json.nodes, "Score : ", 40, 10, 10, 4, "left");
-			push_str(overlay_json.nodes, m_score + "pt ", 95, 10, 10, 4, "right");
+			var y_offset = 0;
+			if(app.get_xrsession && app.get_xrsession()){
+				y_offset = 20;
+			}
+			push_str(overlay_json.nodes, "Time  : ", 40, 5 + y_offset, 10, 4, "left");
+			push_str(overlay_json.nodes, remain.toFixed(0) + "sec", 95, 5 + y_offset, 10, 4, "right");
+			push_str(overlay_json.nodes, "Score : ", 40, 10 + y_offset, 10, 4, "left");
+			push_str(overlay_json.nodes, m_score + "pt ", 95, 10 + y_offset, 10, 4, "right");
 			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 		}else{
 			timeout_callback();
