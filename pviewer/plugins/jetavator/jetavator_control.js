@@ -1,6 +1,7 @@
 var create_plugin = (function () {
 	var m_plugin_host = null;
 	var m_is_init = false;
+	var m_event_handler = null;
 	var m_crawler_mode = false;
 
 	var VEHICLE_DOMAIN = UPSTREAM_DOMAIN + "jetavator_service.";
@@ -45,83 +46,6 @@ var create_plugin = (function () {
 			"CrawlerMode_RightVertical": { mod: "right_crawler", dir: -1 },
 		}
 	};
-
-	var PUSH_THRESHOLD = 0.5;
-	var m_gamepad_id = "";//need to call navigator.getGamepads() dynamically to get live values
-	var m_gamepad_state = null;
-
-	function get_last_gamepad_id(){
-		if (navigator.getGamepads) {
-			var gamepads = navigator.getGamepads();
-			for (var i=gamepads.length-1;i>=0;i--) {
-				if (gamepads[i]) {
-					return gamepads[i].id;
-				}
-			}
-		}
-		return "";
-	}
-
-	window.addEventListener('gamepadconnected', function (e) {
-		console.log("gamepadconnected : ", e.gamepad.id);
-		m_gamepad_id = e.gamepad.id;
-		console.log("active gamepad id : ", m_gamepad_id);
-	}, false);
-	window.addEventListener('gamepaddisconnected', function (e) {
-		console.log("gamepaddisconnected : ", e.gamepad.id);
-		if(e.gamepad.id == m_gamepad_id){
-			m_gamepad_id = get_last_gamepad_id();
-			console.log("active gamepad id : ", m_gamepad_id);
-		}
-	}, false);
-
-	function handleGamepad(callback) {
-		if(!m_gamepad_id){
-			var id = get_last_gamepad_id();
-			if(id){
-				m_gamepad_id = id;
-				console.log("active gamepad id : ", m_gamepad_id);
-			}
-		}
-		var gamepads = [];
-		if (navigator.getGamepads) {
-			gamepads = navigator.getGamepads();
-		}
-		var gamepad = null;
-		for (var i in gamepads) {
-			if (gamepads[i] && gamepads[i].id == m_gamepad_id) {
-				gamepad = gamepads[i];
-				break;
-			}
-		}
-		if (!gamepad) {
-			return;
-		}
-
-		var new_state = {}
-		for (var i in gamepad.buttons) {
-			var key = i + "_BUTTON";
-			new_state[key + "_PUSHED"] = gamepad.buttons[i].value > PUSH_THRESHOLD;
-			new_state[key + "_VALUE"] = gamepad.buttons[i].value;
-			new_state[key + "_PERCENT"] = Math.round(gamepad.buttons[i].value * 100);
-		}
-		for (var i in gamepad.axes) {
-			var key = i + "_AXIS";
-			new_state[key + "_FORWARD"] = gamepad.axes[i] > PUSH_THRESHOLD;
-			new_state[key + "_BACKWARD"] = gamepad.axes[i] < -PUSH_THRESHOLD;
-			new_state[key + "_VALUE"] = gamepad.axes[i];
-			new_state[key + "_PERCENT"] = Math.round(gamepad.axes[i] * 100);
-		}
-		if (!m_gamepad_state) {
-			m_gamepad_state = new_state;
-		}
-		for (var key in new_state) {
-			if (new_state[key] != m_gamepad_state[key]) {
-				callback(key, new_state);
-			}
-		}
-		m_gamepad_state = new_state;
-	}
 	
 	function base64encode_binary(data){
 		return btoa([...data].map(n => String.fromCharCode(n)).join(""));
@@ -206,8 +130,11 @@ var create_plugin = (function () {
 
 	var m_wait_play_start_mode = "start";
 	function wait_play_start(timeout_callback){
-		handleGamepad((key, new_state) => {
-			if(!new_state[key]){
+		m_event_handler = (sender, key, new_state) => {
+			if(!new_state){//fail safe
+				return;
+			}
+			if(!new_state[key]){//only push
 				return;
 			}
 			var cmd = "";
@@ -229,6 +156,37 @@ var create_plugin = (function () {
 					break;
 				case "15_BUTTON_PUSHED":
 					cmd = "right";
+					break;
+				//quest touch
+				case "RIGHT_0_BUTTON_PUSHED":
+					if(new_state[key]){
+						cmd = "cancel";
+					}
+					break;
+				case "RIGHT_1_BUTTON_PUSHED":
+					if(new_state[key]){
+						cmd = "ok";
+					}
+					break;
+				case "RIGHT_3_AXIS_FORWARD":
+					if(new_state[key]){
+						cmd = "up";
+					}
+					break;
+				case "RIGHT_3_AXIS_BACKWARD":
+					if(new_state[key]){
+						cmd = "down";
+					}
+					break;
+				case "RIGHT_2_AXIS_FORWARD":
+					if(new_state[key]){
+						cmd = "left";
+					}
+					break;
+				case "RIGHT_2_AXIS_BACKWARD":
+					if(new_state[key]){
+						cmd = "right";
+					}
 					break;
 			}
 			switch(m_wait_play_start_mode){
@@ -266,7 +224,7 @@ var create_plugin = (function () {
 					}
 					break;
 			}
-		});
+		};
 		var overlay_json = {
 			nodes : [
 				{
@@ -318,7 +276,7 @@ var create_plugin = (function () {
 
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
-		var remain = 30 - elapsed_sec;
+		var remain = 300 - elapsed_sec;
 		if(remain > 0){
 			push_str(overlay_json.nodes, "TIMEOUT", 50, 40, 20, 4);
 			push_str(overlay_json.nodes, remain.toFixed(0), 50, 45, 20, 4);
@@ -329,9 +287,18 @@ var create_plugin = (function () {
 	}
 
 	function playing(timeout_callback){
-		handleGamepad((key, new_state) => {
-
-			var crawler_mode = (new_state["10_BUTTON_PUSHED"] || new_state["11_BUTTON_PUSHED"]);
+		m_event_handler = (sender, key, new_state) => {
+			if(!new_state){//fail safe
+				return;
+			}
+			var crawler_mode = false;
+			if(new_state["10_BUTTON_PUSHED"] || new_state["11_BUTTON_PUSHED"]){
+				crawler_mode = true;
+			}
+			//quest touch : 0_BUTTON trriger, 1_BUTTON grip, 3_BUTTON axis
+			if(new_state["LEFT_3_BUTTON_PUSHED"] || new_state["RIGHT_3_BUTTON_PUSHED"]){
+				crawler_mode = true;
+			}
 			if (crawler_mode != m_crawler_mode) {
 				m_crawler_mode = crawler_mode;
 				{
@@ -346,6 +313,9 @@ var create_plugin = (function () {
 				table = {
 					"1_AXIS_PERCENT": "CrawlerMode_LeftVertical",
 					"3_AXIS_PERCENT": "CrawlerMode_RightVertical",
+					//quest touch
+					"LEFT_3_AXIS_PERCENT": "CrawlerMode_LeftVertical",
+					"RIGHT_3_AXIS_PERCENT": "CrawlerMode_RightVertical",
 				};
 			} else {
 				//https://gamepad-tester.com/
@@ -358,6 +328,15 @@ var create_plugin = (function () {
 					"5_BUTTON_PUSHED": "RightBackOpt",
 					"6_BUTTON_PERCENT": "LeftBack",
 					"7_BUTTON_PERCENT": "RightBack",
+					//quest touch
+					"LEFT_2_AXIS_PERCENT": "LeftHorizon",
+					"LEFT_3_AXIS_PERCENT": "LeftVertical",
+					"RIGHT_2_AXIS_PERCENT": "RightHorizon",
+					"RIGHT_3_AXIS_PERCENT": "RightVertical",
+					"LEFT_0_BUTTON_PUSHED": "LeftBackOpt",
+					"RIGHT_0_BUTTON_PUSHED": "RightBackOpt",
+					"LEFT_1_BUTTON_PERCENT": "LeftBack",
+					"RIGHT_1_BUTTON_PERCENT": "RightBack",
 				};
 			}
 			if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
@@ -387,7 +366,7 @@ var create_plugin = (function () {
 				m_plugin_host.send_command(cmd);
 				console.log(cmd);
 			}
-		});
+		};
 
 		var overlay_json = {
 			nodes : [],
@@ -472,6 +451,11 @@ var create_plugin = (function () {
 			init();
 		}
 		var plugin = {
+			event_handler : function(sender, event, state) {
+				if(m_event_handler){
+					m_event_handler(sender, event, state);
+				}
+			},
 		};
 		return plugin;
 	}
