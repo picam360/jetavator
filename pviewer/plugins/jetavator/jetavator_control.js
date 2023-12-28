@@ -431,6 +431,7 @@ var create_plugin = (function () {
 					});
 					break;
 				case "start_play":
+					m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "0");
 					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
 					m_state_st = new Date().getTime();
 					m_state = "playing";
