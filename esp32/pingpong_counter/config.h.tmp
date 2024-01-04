@@ -1,0 +1,13 @@
+
+const char* ssid = "your-ssid";
+const char* password = "*****";
+//#define USE_STATIC_IP
+#ifdef USE_STATIC_IP
+const IPAddress ip(192,168,0,100);
+const IPAddress gateway(192,168,0,1);
+const IPAddress subnet(255,255,255,0);
+#endif
+
+//select one
+//#define TARGET_DEVICE_ATOMS3
+//#define TARGET_DEVICE_ESP_DEVKIT_C
