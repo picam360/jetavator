@@ -5,7 +5,7 @@ var create_plugin = (function () {
 	var m_crawler_mode = false;
 
 	var STARTING_TIMEOUT = 60;
-	var PLAYTING_TIMEOUT = 300;
+	var PLAYTING_TIMEOUT = 180;
 
 	var VEHICLE_DOMAIN = UPSTREAM_DOMAIN + "jetavator_service.";
 
@@ -156,7 +156,7 @@ var create_plugin = (function () {
 		for(var i=0;i<str.length;i++){
 			nodes.push({
 				obj_scale : 1.0*w/2,
-				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/5 + 10}]`,
+				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/5 + 15}]`,
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
 				obj_id : "board",
 			});
@@ -488,7 +488,16 @@ var create_plugin = (function () {
 					});
 					break;
 				case "end_play":
-					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
+					{
+						var overlay_json = {
+							nodes : [],
+						};
+						push_str(overlay_json.nodes, "Time up!", 50, 45, 10, 4);
+						push_str(overlay_json.nodes, `Score : ${m_score}pt`, 50, 55, 5, 4);
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
+
+						m_event_handler = null;
+					}
 					break;
 			}
 		}, 100);
