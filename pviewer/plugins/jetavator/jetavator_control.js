@@ -495,6 +495,9 @@ var create_plugin = (function () {
 						push_str(overlay_json.nodes, `SCORE : ${m_score}pt`, 50, 55, 5, 4);
 						m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 
+						var cmd = VEHICLE_DOMAIN + "reset";
+						m_plugin_host.send_command(cmd);
+						
 						m_event_handler = null;
 					}
 					break;
