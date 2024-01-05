@@ -156,7 +156,7 @@ var create_plugin = (function () {
 		for(var i=0;i<str.length;i++){
 			nodes.push({
 				obj_scale : 1.0*w/2,
-				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/5 + 15}]`,
+				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/3 + 20}]`,
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
 				obj_id : "board",
 			});
@@ -265,8 +265,8 @@ var create_plugin = (function () {
 		};
 		if(app.get_xrsession && app.get_xrsession()){
 			overlay_json.nodes.push({
-				obj_scale : 5.0,
-				obj_pos : "0,-5,10",
+				obj_scale : 20.0,
+				obj_pos : "0,-15,50",
 				tex_id : "title",
 				obj_id : "board",
 				obj_quat : "0,0,0,1",
