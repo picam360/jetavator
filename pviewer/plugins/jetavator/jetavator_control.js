@@ -270,7 +270,6 @@ var create_plugin = (function () {
 				tex_id : "title",
 				obj_id : "board",
 				obj_quat : "0,0,0,1",
-				blend : false,
 			});
 		}else{
 			overlay_json.nodes.push({
@@ -492,8 +491,8 @@ var create_plugin = (function () {
 						var overlay_json = {
 							nodes : [],
 						};
-						push_str(overlay_json.nodes, "Time up!", 50, 45, 10, 4);
-						push_str(overlay_json.nodes, `Score : ${m_score}pt`, 50, 55, 5, 4);
+						push_str(overlay_json.nodes, "TIME UP", 50, 45, 10, 4);
+						push_str(overlay_json.nodes, `SCORE : ${m_score}pt`, 50, 55, 5, 4);
 						m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(overlay_json));
 
 						m_event_handler = null;
