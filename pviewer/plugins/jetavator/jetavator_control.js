@@ -4,6 +4,9 @@ var create_plugin = (function () {
 	var m_event_handler = null;
 	var m_crawler_mode = false;
 
+	var STARTING_TIMEOUT = 60;
+	var PLAYTING_TIMEOUT = 300;
+
 	var VEHICLE_DOMAIN = UPSTREAM_DOMAIN + "jetavator_service.";
 
 	function button_svg(charactor, bgcolor, charcolor, fontsize, yoffset) {
@@ -102,6 +105,13 @@ var create_plugin = (function () {
 	}
 
 	function push_str(nodes, str, x, y, z, w, coodinate){
+		if(app.get_xrsession && app.get_xrsession()){
+			push_str_on_space(nodes, str, x, y, z, w, coodinate);
+		}else{
+			push_str_on_display(nodes, str, x, y, z, w, coodinate);
+		}
+	}
+	function push_str_on_display(nodes, str, x, y, z, w, coodinate){
 		var offset = 0;
 		switch(coodinate){
 			case "left":
@@ -124,6 +134,31 @@ var create_plugin = (function () {
 				y,
 				z : (z > 1 ? z : INT_MAX),
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
+			});
+		}
+	}
+	function push_str_on_space(nodes, str, x, y, z, w, coodinate){
+		w /=4;
+
+		var offset = 0;
+		switch(coodinate){
+			case "left":
+				offset = 0;
+				break;
+			case "right":
+				offset = -w*str.length;
+				break;
+			case "center":
+			default:
+				offset = -w*str.length/2 + w/2;
+				break;
+		}
+		for(var i=0;i<str.length;i++){
+			nodes.push({
+				obj_scale : 1.0*w/2,
+				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/5 + 10}]`,
+				tex_id : `ascii[${str.charCodeAt(i)}]`,
+				obj_id : "board",
 			});
 		}
 	}
@@ -226,17 +261,27 @@ var create_plugin = (function () {
 			}
 		};
 		var overlay_json = {
-			nodes : [
-				{
-					width : 100,
-					height : 25,
-					x : 0,
-					y : 0,
-					z : 10,
-					tex_id : "title",
-				},
-			],
+			nodes : [],
 		};
+		if(app.get_xrsession && app.get_xrsession()){
+			overlay_json.nodes.push({
+				obj_scale : 5.0,
+				obj_pos : "0,-5,10",
+				tex_id : "title",
+				obj_id : "board",
+				obj_quat : "0,0,0,1",
+				blend : false,
+			});
+		}else{
+			overlay_json.nodes.push({
+				width : 100,
+				height : 25,
+				x : 0,
+				y : 0,
+				z : 10,
+				tex_id : "title",
+			});
+		}
 
 		var cur_y = 0;
 		var font_size = [ 4, 4, 4 ];
@@ -276,7 +321,7 @@ var create_plugin = (function () {
 
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
-		var remain = 300 - elapsed_sec;
+		var remain = STARTING_TIMEOUT - elapsed_sec;
 		if(remain > 0){
 			push_str(overlay_json.nodes, "TIMEOUT", 50, 40, 20, 4);
 			push_str(overlay_json.nodes, remain.toFixed(0), 50, 45, 20, 4);
@@ -373,7 +418,7 @@ var create_plugin = (function () {
 		};
 		var now = new Date().getTime();
 		var elapsed_sec = (now - m_state_st) / 1e3;
-		var remain = 300 - elapsed_sec;
+		var remain = PLAYTING_TIMEOUT - elapsed_sec;
 		if(remain > 0){
 			var y_offset = 0;
 			if(app.get_xrsession && app.get_xrsession()){
