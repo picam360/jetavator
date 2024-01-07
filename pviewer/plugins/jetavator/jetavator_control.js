@@ -180,11 +180,11 @@ var create_plugin = (function () {
 				case "1_BUTTON_PUSHED":
 					cmd = "ok";
 					break;
-				case "1_AXIS_FORWARD":
+				case "1_AXIS_BACKWARD":
 				case "12_BUTTON_PUSHED":
 					cmd = "up";
 					break;
-				case "1_AXIS_BACKWARD":
+				case "1_AXIS_FORWARD":
 				case "13_BUTTON_PUSHED":
 					cmd = "down";
 					break;
