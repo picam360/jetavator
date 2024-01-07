@@ -3,6 +3,7 @@ var create_plugin = (function () {
 	var m_is_init = false;
 	var m_event_handler = null;
 	var m_crawler_mode = false;
+	var m_warp_tilt = 0;
 
 	var STARTING_TIMEOUT = 60;
 	var PLAYTING_TIMEOUT = 180;
@@ -52,6 +53,15 @@ var create_plugin = (function () {
 	
 	function base64encode_binary(data){
 		return btoa([...data].map(n => String.fromCharCode(n)).join(""));
+	}
+
+	function cal_current_pitch_yaw_deg() {
+		var view_offset_quat = m_plugin_host.get_view_offset()
+			|| new THREE.Quaternion();
+		var view_quat = m_plugin_host.get_view_quat()
+			|| new THREE.Quaternion();
+		var quat = view_offset_quat.multiply(view_quat);
+		return calPitchYawDegree(quat);
 	}
 
 	var m_imgs = [
@@ -166,6 +176,13 @@ var create_plugin = (function () {
 	var m_wait_play_start_mode = "start";
 	function wait_play_start(timeout_callback){
 		m_event_handler = (sender, key, new_state) => {
+			var view_tilt = cal_current_pitch_yaw_deg()[0];
+			if(view_tilt < m_warp_tilt){
+				m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "1");
+				return;
+			}else{
+				m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "0");
+			}
 			if(!new_state){//fail safe
 				return;
 			}
@@ -336,6 +353,13 @@ var create_plugin = (function () {
 
 	function playing(timeout_callback){
 		m_event_handler = (sender, key, new_state) => {
+			var view_tilt = cal_current_pitch_yaw_deg()[0];
+			if(view_tilt < m_warp_tilt){
+				m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "1");
+				return;
+			}else{
+				m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "0");
+			}
 			if(!new_state){//fail safe
 				return;
 			}
@@ -465,6 +489,11 @@ var create_plugin = (function () {
 									m_score = value;
 								}
 							}
+							if(pst_name == "warp"){
+								if(param == "tilt"){
+									m_warp_tilt = parseFloat(value);
+								}
+							}
 						});
 
 						upload_imgs(m_pstcore, m_pst);
@@ -479,7 +508,6 @@ var create_plugin = (function () {
 					});
 					break;
 				case "start_play":
-					m_pstcore.pstcore_set_param(m_pst, "warp", "gamepad_enabled", "0");
 					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
 					m_state_st = new Date().getTime();
 					m_state = "playing";
