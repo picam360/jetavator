@@ -138,7 +138,7 @@ var create_plugin = (function () {
 		}
 	}
 	function push_str_on_space(nodes, str, x, y, z, w, coodinate){
-		w /=4;
+		w /=8;
 
 		var offset = 0;
 		switch(coodinate){
@@ -156,7 +156,7 @@ var create_plugin = (function () {
 		for(var i=0;i<str.length;i++){
 			nodes.push({
 				obj_scale : 1.0*w/2,
-				obj_pos : `${(x-50)/4 + w*i + offset},${(y-50)/5},${(z-10)/3 + 20}]`,
+				obj_pos : `${(x-50)/8 + w*i + offset},${(y-50)/10},${(z-10)/3 + 10}]`,
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
 				obj_id : "board",
 			});
@@ -180,15 +180,19 @@ var create_plugin = (function () {
 				case "1_BUTTON_PUSHED":
 					cmd = "ok";
 					break;
+				case "1_AXIS_FORWARD":
 				case "12_BUTTON_PUSHED":
 					cmd = "up";
 					break;
+				case "1_AXIS_BACKWARD":
 				case "13_BUTTON_PUSHED":
 					cmd = "down";
 					break;
+				case "0_AXIS_BACKWARD":
 				case "14_BUTTON_PUSHED":
 					cmd = "left";
 					break;
+				case "0_AXIS_FORWARD":
 				case "15_BUTTON_PUSHED":
 					cmd = "right";
 					break;
@@ -265,8 +269,8 @@ var create_plugin = (function () {
 		};
 		if(app.get_xrsession && app.get_xrsession()){
 			overlay_json.nodes.push({
-				obj_scale : 20.0,
-				obj_pos : "0,-15,50",
+				obj_scale : 10.0,
+				obj_pos : "0,-5,10",
 				tex_id : "title",
 				obj_id : "board",
 				obj_quat : "0,0,0,1",
