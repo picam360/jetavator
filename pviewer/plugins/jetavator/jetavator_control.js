@@ -148,7 +148,7 @@ var create_plugin = (function () {
 		}
 	}
 	function push_str_on_space(nodes, str, x, y, z, w, coodinate){
-		w /=8;
+		w /= 16;
 
 		var offset = 0;
 		switch(coodinate){
@@ -166,7 +166,7 @@ var create_plugin = (function () {
 		for(var i=0;i<str.length;i++){
 			nodes.push({
 				obj_scale : 1.0*w/2,
-				obj_pos : `${(x-50)/8 + w*i + offset},${(y-50)/10},${(z-10)/3 + 10}]`,
+				obj_pos : `${(x-50)/16 + w*i + offset},${(y-50)/20},${(z-10)/5 + 5}]`,
 				tex_id : `ascii[${str.charCodeAt(i)}]`,
 				obj_id : "board",
 			});
@@ -283,8 +283,8 @@ var create_plugin = (function () {
 		};
 		if(app.get_xrsession && app.get_xrsession()){
 			overlay_json.nodes.push({
-				obj_scale : 10.0,
-				obj_pos : "0,-5,10",
+				obj_scale : 2,
+				obj_pos : "0,-2,5",
 				tex_id : "title",
 				obj_id : "board",
 				obj_quat : "0,0,0,1",
