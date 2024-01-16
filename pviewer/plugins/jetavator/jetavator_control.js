@@ -4,6 +4,7 @@ var create_plugin = (function () {
 	var m_event_handler = null;
 	var m_crawler_mode = false;
 	var m_warp_tilt = 0;
+	var m_osg_enabled = false;
 
 	var STARTING_TIMEOUT = 60;
 	var PLAYTING_TIMEOUT = 180;
@@ -242,6 +243,10 @@ var create_plugin = (function () {
 					}
 					break;
 			}
+			if(cmd && sender.toUpperCase() != "OSG" && m_osg_enabled){
+				m_osg_enabled = false;
+				m_pstcore.pstcore_set_param(m_pst, "osg", "enabled", "0");
+			}
 			switch(m_wait_play_start_mode){
 				case "yoko_senkai":
 					switch(cmd){
@@ -406,6 +411,10 @@ var create_plugin = (function () {
 				};
 			}
 			if (table[key] && MODE_DEF[m_mode] && MODE_DEF[m_mode][table[key]]) {
+				if(sender.toUpperCase() != "OSG" && m_osg_enabled){
+					m_osg_enabled = false;
+					m_pstcore.pstcore_set_param(m_pst, "osg", "enabled", "0");
+				}
 				if (!MODE_DEF[m_mode][table[key]].mod) {
 					return;
 				}
@@ -489,6 +498,10 @@ var create_plugin = (function () {
 								}
 							}
 						});
+						{
+							m_osg_enabled = true;
+							m_pstcore.pstcore_set_param(m_pst, "osg", "enabled", "1");
+						}
 
 						upload_imgs(m_pstcore, m_pst);
 						m_state_st = new Date().getTime();
