@@ -189,35 +189,31 @@ var create_plugin = (function () {
 			}
 			var cmd = "";
 			switch(key){
-				case "0_BUTTON_PUSHED":
+				case "10_BUTTON_PUSHED":
 					cmd = "cancel";
 					break;
-				case "1_BUTTON_PUSHED":
+				case "11_BUTTON_PUSHED":
 					cmd = "ok";
 					break;
-				case "1_AXIS_BACKWARD":
-				case "12_BUTTON_PUSHED":
+				case "3_AXIS_BACKWARD":
 					cmd = "up";
 					break;
-				case "1_AXIS_FORWARD":
-				case "13_BUTTON_PUSHED":
+				case "3_AXIS_FORWARD":
 					cmd = "down";
 					break;
-				case "0_AXIS_BACKWARD":
-				case "14_BUTTON_PUSHED":
+				case "2_AXIS_BACKWARD":
 					cmd = "left";
 					break;
-				case "0_AXIS_FORWARD":
-				case "15_BUTTON_PUSHED":
+				case "2_AXIS_FORWARD":
 					cmd = "right";
 					break;
-				//quest touch : 4_BUTTON A, 5_BUTTON B
-				case "RIGHT_5_BUTTON_PUSHED":
+				//quest touch : 3_BUTTON stick, 4_BUTTON A, 5_BUTTON B
+				case "LEFT_3_BUTTON_PUSHED":
 					if(new_state[key]){
 						cmd = "cancel";
 					}
 					break;
-				case "RIGHT_4_BUTTON_PUSHED":
+				case "RIGHT_3_BUTTON_PUSHED":
 					if(new_state[key]){
 						cmd = "ok";
 					}
